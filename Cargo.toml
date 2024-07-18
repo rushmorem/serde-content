@@ -1,0 +1,20 @@
+[package]
+name = "serde-content"
+version = "0.0.0"
+edition = "2021"
+description = "Serde data model"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/rushmorem/serde-content"
+readme = "README.md"
+keywords = ["serde"]
+authors = ["rushmorem <rushmore@webenchanter.com>"]
+
+[features]
+default = ["derive"]
+derive = ["serde/derive"]
+
+[dependencies.serde]
+version = "1.0.204"
+default-features = false
+features = ["alloc"]
+optional = true
