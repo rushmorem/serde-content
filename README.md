@@ -1,1 +1,1 @@
-# serde-content
+# Serde data model
