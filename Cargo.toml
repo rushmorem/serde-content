@@ -7,7 +7,7 @@ license = "MIT/Apache-2.0"
 repository = "https://github.com/rushmorem/serde-content"
 readme = "README.md"
 keywords = ["serde"]
-authors = ["rushmorem <rushmore@webenchanter.com>"]
+authors = ["rushmorem <rushmore@surrealdb.com>"]
 
 [features]
 default = ["derive"]
