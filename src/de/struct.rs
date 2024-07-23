@@ -1,7 +1,18 @@
 use crate::de::UNKNOWN_TYPE_NAME;
-use crate::{Data, Struct};
+use crate::Deserializer;
+use crate::{Content, Data, Error, Struct, HUMAN_READABLE};
+use alloc::boxed::Box;
 use alloc::{borrow::Cow, vec::Vec};
+use serde::de::IntoDeserializer;
 use serde::{de, Deserialize};
+
+impl<'de> IntoDeserializer<'de, Error> for Struct<'de> {
+    type Deserializer = Deserializer<'de>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        Deserializer::new(Content::Struct(Box::new(self)), HUMAN_READABLE)
+    }
+}
 
 impl<'de> Deserialize<'de> for Struct<'de> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
