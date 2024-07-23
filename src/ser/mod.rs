@@ -11,6 +11,7 @@ mod tuple;
 use crate::Data;
 use crate::Error;
 use crate::Number;
+use crate::HUMAN_READABLE;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -34,7 +35,7 @@ pub fn to_content<T>(value: T) -> Result<Content, Error>
 where
     T: ser::Serialize,
 {
-    value.serialize(Serializer::new(false))
+    value.serialize(Serializer::new(HUMAN_READABLE))
 }
 
 /// A structure for serialising Rust values into [crate::Content].

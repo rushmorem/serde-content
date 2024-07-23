@@ -21,6 +21,10 @@ pub use error::Result;
 #[cfg(feature = "serde")]
 pub use {de::from_content, de::Deserializer, ser::to_content, ser::Serializer};
 
+// We prefer more efficient formats by default
+#[cfg(feature = "serde")]
+const HUMAN_READABLE: bool = false;
+
 /// A containter for all Rust number types.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[non_exhaustive] // In case Rust introduces new number types.

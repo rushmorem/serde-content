@@ -12,6 +12,7 @@ use crate::Content;
 use crate::Data;
 use crate::Error;
 use crate::Number;
+use crate::HUMAN_READABLE;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -22,6 +23,7 @@ use identifier::Identifier;
 use map::Map;
 use seq::Seq;
 use serde::de;
+use serde::de::IntoDeserializer;
 mod error;
 use map::Key;
 use serde::de::EnumAccess;
@@ -36,7 +38,7 @@ pub fn from_content<'de, T>(content: Content<'de>) -> Result<T, Error>
 where
     T: de::Deserialize<'de>,
 {
-    let deserializer = Deserializer::new(content, false);
+    let deserializer = Deserializer::new(content, HUMAN_READABLE);
     T::deserialize(deserializer)
 }
 
@@ -54,6 +56,22 @@ impl<'de> Deserializer<'de> {
             content,
             human_readable,
         }
+    }
+}
+
+impl<'de> IntoDeserializer<'de, Error> for Deserializer<'de> {
+    type Deserializer = Deserializer<'de>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        self
+    }
+}
+
+impl<'de> IntoDeserializer<'de, Error> for Content<'de> {
+    type Deserializer = Deserializer<'de>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        Deserializer::new(self, HUMAN_READABLE)
     }
 }
 

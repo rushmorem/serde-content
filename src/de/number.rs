@@ -1,6 +1,16 @@
-use crate::Number;
+use crate::Error;
+use crate::{Content, Deserializer, Number, HUMAN_READABLE};
 use serde::de;
+use serde::de::IntoDeserializer;
 use serde::Deserialize;
+
+impl<'de> IntoDeserializer<'de, Error> for Number {
+    type Deserializer = Deserializer<'de>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        Deserializer::new(Content::Number(self), HUMAN_READABLE)
+    }
+}
 
 impl<'de> Deserialize<'de> for Number {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
