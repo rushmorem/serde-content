@@ -18,3 +18,5 @@ version = "1.0.204"
 default-features = false
 features = ["alloc"]
 optional = true
+git = "https://github.com/rushmorem/serde"
+branch = "missing-visitor-methods"
