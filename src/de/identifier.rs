@@ -1,12 +1,21 @@
+use crate::de::error::Unexpected;
+use crate::DataType;
 use crate::Error;
-use serde::de;
+use crate::Expected;
+use crate::Found;
 use serde::de::Deserializer;
-use serde::de::Unexpected;
 use serde::de::Visitor;
 
 pub(super) struct Identifier {
     name: &'static str,
     index: u64,
+}
+
+impl Unexpected for Identifier {
+    fn unexpected(self, expected: Expected) -> Error {
+        let found = Found::Identifier(self.name.to_string());
+        Error::unexpected(found, expected)
+    }
 }
 
 impl Identifier {
@@ -88,216 +97,175 @@ impl<'de> Deserializer<'de> for Identifier {
         visitor.visit_unit()
     }
 
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_bool<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier bool"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Bool))
     }
 
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i8<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier i8"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::I8))
     }
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i16<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier i16"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::I16))
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i32<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier i32"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::I32))
     }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i64<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier i64"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::I64))
     }
 
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u8<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier u8"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::U8))
     }
 
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u16<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier u16"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::U16))
     }
 
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u32<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier u32"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::U32))
     }
 
-    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_f32<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier f32"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::F32))
     }
 
-    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_f64<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier f64"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::F64))
     }
 
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_char<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier char"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Char))
     }
 
     fn deserialize_unit_struct<V>(
         self,
-        _name: &'static str,
-        visitor: V,
+        name: &'static str,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier unit struct"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Struct {
+            name: name.to_owned(),
+            typ: DataType::Unit,
+        }))
     }
 
     fn deserialize_newtype_struct<V>(
         self,
-        _name: &'static str,
-        visitor: V,
+        name: &'static str,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier newtype struct"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Struct {
+            name: name.to_owned(),
+            typ: DataType::NewType,
+        }))
     }
 
-    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_seq<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier seq"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Seq))
     }
 
-    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_tuple<V>(self, len: usize, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier tuple"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Tuple(len)))
     }
 
     fn deserialize_tuple_struct<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         _len: usize,
-        visitor: V,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier tuple struct"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Struct {
+            name: name.to_owned(),
+            typ: DataType::Tuple,
+        }))
     }
 
-    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier map"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Map))
     }
 
     fn deserialize_struct<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         _fields: &'static [&'static str],
-        visitor: V,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier struct"),
-            &visitor,
-        ))
+        Err(self.unexpected(Expected::Struct {
+            name: name.to_owned(),
+            typ: DataType::Struct,
+        }))
     }
 
     fn deserialize_enum<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         _variants: &'static [&'static str],
-        visitor: V,
+        _visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        Err(de::Error::invalid_type(
-            Unexpected::Other("identifier enum"),
-            &visitor,
-        ))
+        // The use of `DataType::Unit` here is arbitrary. At this point, the type of enum is not known.
+        Err(self.unexpected(Expected::Enum {
+            name: name.to_owned(),
+            typ: DataType::Unit,
+        }))
     }
 }

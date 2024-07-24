@@ -17,9 +17,12 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 pub use error::Error;
+pub use error::ErrorKind;
+pub use error::Expected;
+pub use error::Found;
 pub use error::Result;
 #[cfg(feature = "serde")]
-pub use {de::from_content, de::Deserializer, ser::to_content, ser::Serializer};
+pub use {de::from_content, de::Deserializer, de::Unexpected, ser::to_content, ser::Serializer};
 
 // We prefer more efficient formats by default
 #[cfg(feature = "serde")]
@@ -100,6 +103,29 @@ impl Data<'_> {
             },
         }
     }
+
+    const fn typ(&self) -> DataType {
+        match self {
+            Data::Unit => DataType::Unit,
+            Data::NewType { .. } => DataType::NewType,
+            Data::Tuple { .. } => DataType::Tuple,
+            Data::Struct { .. } => DataType::Struct,
+        }
+    }
+}
+
+/// Struct and enum data type.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "derive", derive(serde::Serialize, serde::Deserialize))]
+pub enum DataType {
+    /// Unit struct or unit enum variant.
+    Unit,
+    /// Newtype struct or enum variant.
+    NewType,
+    /// Tuple struct or enum variant.
+    Tuple,
+    /// Object-like struct or enum variant.
+    Struct,
 }
 
 /// Represents a Rust struct.

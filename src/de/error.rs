@@ -1,88 +1,62 @@
-use serde::de::{self, Expected, Unexpected};
+use crate::{Content, Enum, Error, Expected, Found, Number, Struct};
 
-use crate::{Content, Data, Number};
+/// A convenience wrapper for constructing [crate::Found] and returning an error.
+pub trait Unexpected {
+    /// Consumes the type and returns an error.
+    fn unexpected(self, expected: Expected) -> Error;
+}
 
-impl Content<'_> {
-    #[cold]
-    pub(super) fn invalid_type<E>(&self, exp: &dyn Expected) -> E
-    where
-        E: de::Error,
-    {
-        de::Error::invalid_type(self.unexpected(), exp)
-    }
-
-    #[cold]
-    fn unexpected(&self) -> Unexpected {
-        match self {
-            Content::Unit => Unexpected::Unit,
-            Content::Bool(v) => Unexpected::Bool(*v),
-            Content::Number(n) => match *n {
-                Number::I8(n) => Unexpected::Signed(n as i64),
-                Number::U8(n) => Unexpected::Unsigned(n as u64),
-                Number::I16(n) => Unexpected::Signed(n as i64),
-                Number::U16(n) => Unexpected::Unsigned(n as u64),
-                Number::I32(n) => Unexpected::Signed(n as i64),
-                Number::U32(n) => Unexpected::Unsigned(n as u64),
-                Number::F32(n) => Unexpected::Float(n as f64),
-                Number::I64(n) => Unexpected::Signed(n),
-                Number::U64(n) => Unexpected::Unsigned(n),
-                Number::F64(n) => Unexpected::Float(n),
-                Number::I128(n) => match i64::try_from(n) {
-                    Ok(n) => Unexpected::Signed(n),
-                    Err(_) => Unexpected::Other("128-bit signed integer"),
-                },
-                Number::U128(n) => match u64::try_from(n) {
-                    Ok(n) => Unexpected::Unsigned(n),
-                    Err(_) => Unexpected::Other("128-bit unsigned integer"),
-                },
-            },
-            Content::Char(v) => Unexpected::Char(*v),
-            Content::String(v) => Unexpected::Str(v.as_ref()),
-            Content::Bytes(v) => Unexpected::Bytes(v.as_ref()),
-            Content::Seq(_) => Unexpected::Seq,
-            Content::Map(_) => Unexpected::Map,
-            Content::Option(_) => Unexpected::Option,
-            Content::Struct(v) => v.data.unexpected_struct(),
-            Content::Enum(v) => v.data.unexpected_enum(),
-            Content::Tuple(_) => Unexpected::Other("tuple"),
-        }
+impl Unexpected for Number {
+    fn unexpected(self, expected: Expected) -> Error {
+        let found = Found::Number(self);
+        Error::unexpected(found, expected)
     }
 }
 
-impl Data<'_> {
-    #[cold]
-    pub(super) fn invalid_struct_type<E>(&self, exp: &dyn Expected) -> E
-    where
-        E: de::Error,
-    {
-        de::Error::invalid_type(self.unexpected_struct(), exp)
+impl Unexpected for Content<'_> {
+    fn unexpected(self, expected: Expected) -> Error {
+        let found = match self {
+            Content::Unit => Found::Unit,
+            Content::Bool(v) => Found::Bool(v),
+            Content::Number(v) => Found::Number(v),
+            Content::Char(v) => Found::Char(v),
+            Content::String(v) => Found::String(v.into_owned()),
+            Content::Bytes(v) => Found::Bytes(v.into_owned()),
+            Content::Seq(_) => Found::Seq,
+            Content::Map(_) => Found::Map,
+            Content::Option(_) => Found::Option,
+            Content::Struct(v) => Found::Struct {
+                name: v.name.to_owned(),
+                typ: v.data.typ(),
+            },
+            Content::Enum(v) => Found::Enum {
+                name: v.name.to_owned(),
+                variant: v.variant.to_owned(),
+                typ: v.data.typ(),
+            },
+            Content::Tuple(_) => Found::Tuple,
+        };
+        Error::unexpected(found, expected)
     }
+}
 
-    #[cold]
-    fn unexpected_struct(&self) -> Unexpected {
-        match self {
-            Data::Unit => Unexpected::Other("unit struct"),
-            Data::NewType { .. } => Unexpected::NewtypeStruct,
-            Data::Tuple { .. } => Unexpected::Other("tuple struct"),
-            Data::Struct { .. } => Unexpected::Other("struct"),
-        }
+impl Unexpected for Box<Struct<'_>> {
+    fn unexpected(self, expected: Expected) -> Error {
+        let found = Found::Struct {
+            name: self.name.to_owned(),
+            typ: self.data.typ(),
+        };
+        Error::unexpected(found, expected)
     }
+}
 
-    #[cold]
-    pub(super) fn invalid_enum_type<E>(&self, exp: &dyn Expected) -> E
-    where
-        E: de::Error,
-    {
-        de::Error::invalid_type(self.unexpected_enum(), exp)
-    }
-
-    #[cold]
-    fn unexpected_enum(&self) -> Unexpected {
-        match self {
-            Data::Unit => Unexpected::UnitVariant,
-            Data::NewType { .. } => Unexpected::NewtypeVariant,
-            Data::Tuple { .. } => Unexpected::TupleVariant,
-            Data::Struct { .. } => Unexpected::StructVariant,
-        }
+impl Unexpected for Box<Enum<'_>> {
+    fn unexpected(self, expected: Expected) -> Error {
+        let found = Found::Enum {
+            name: self.name.to_owned(),
+            variant: self.variant.to_owned(),
+            typ: self.data.typ(),
+        };
+        Error::unexpected(found, expected)
     }
 }
