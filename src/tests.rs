@@ -11,5 +11,5 @@ fn content_size() {
 
 #[test]
 fn error_size() {
-    assert!(size_of::<Error>() <= 32);
+    assert!(size_of::<Error>() <= 8);
 }

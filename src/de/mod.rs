@@ -10,9 +10,12 @@ mod tests;
 
 use crate::Content;
 use crate::Data;
+use crate::DataType;
 use crate::Error;
+use crate::Expected;
 use crate::Number;
 use crate::HUMAN_READABLE;
+use crate::UNKNOWN_TYPE_NAME;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -30,7 +33,7 @@ use serde::de::MapAccess;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
 
-const UNKNOWN_TYPE_NAME: &str = "<unknown>";
+pub use error::Unexpected;
 
 /// Deserializes a value `T` from [`Content`]
 pub fn from_content<'de, T>(content: Content<'de>) -> Result<T, Error>
@@ -140,7 +143,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     visitor.visit_struct(v.name, &field_names, data)
                 }
             },
-            Content::Enum(v) => r#enum::visit_enum(v, self.human_readable, visitor),
+            Content::Enum(v) => {
+                r#enum::visit_enum(UNKNOWN_TYPE_NAME, v, self.human_readable, visitor)
+            }
             Content::Tuple(v) => visitor.visit_tuple(Seq::new(v, self.human_readable)),
         }
     }
@@ -151,7 +156,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Bool(v) => visitor.visit_bool(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Bool)),
         }
     }
 
@@ -161,7 +166,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::I8(v)) => visitor.visit_i8(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::I8)),
         }
     }
 
@@ -171,7 +176,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::I16(v)) => visitor.visit_i16(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::I16)),
         }
     }
 
@@ -181,7 +186,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::I32(v)) => visitor.visit_i32(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::I32)),
         }
     }
 
@@ -191,7 +196,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::I64(v)) => visitor.visit_i64(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::I64)),
         }
     }
 
@@ -201,7 +206,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::I128(v)) => visitor.visit_i128(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::I128)),
         }
     }
 
@@ -211,7 +216,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::U8(v)) => visitor.visit_u8(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::U8)),
         }
     }
 
@@ -221,7 +226,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::U16(v)) => visitor.visit_u16(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::U16)),
         }
     }
 
@@ -231,7 +236,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::U32(v)) => visitor.visit_u32(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::U32)),
         }
     }
 
@@ -241,7 +246,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::U64(v)) => visitor.visit_u64(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::U64)),
         }
     }
 
@@ -251,7 +256,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::U128(v)) => visitor.visit_u128(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::U128)),
         }
     }
 
@@ -261,7 +266,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::F32(v)) => visitor.visit_f32(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::F32)),
         }
     }
 
@@ -271,7 +276,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Number(Number::F64(v)) => visitor.visit_f64(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::F64)),
         }
     }
 
@@ -281,7 +286,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Char(v) => visitor.visit_char(v),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Char)),
         }
     }
 
@@ -294,7 +299,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::String)),
         }
     }
 
@@ -314,7 +319,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Borrowed(v) => visitor.visit_borrowed_bytes(v),
                 Cow::Owned(v) => visitor.visit_byte_buf(v),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Bytes)),
         }
     }
 
@@ -347,7 +352,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Unit => visitor.visit_unit(),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Unit)),
         }
     }
 
@@ -362,15 +367,21 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         match self.content {
             Content::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit_struct(name),
-                data => Err(data.invalid_struct_type(&visitor)),
+                _ => Err(v.unexpected(Expected::Struct {
+                    name: name.to_owned(),
+                    typ: DataType::Unit,
+                })),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Struct {
+                name: name.to_owned(),
+                typ: DataType::Unit,
+            })),
         }
     }
 
     fn deserialize_newtype_struct<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -382,9 +393,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     let deserializer = Deserializer::new(value, self.human_readable);
                     visitor.visit_newtype_struct_with_name(v.name, deserializer)
                 }
-                data => Err(data.invalid_struct_type(&visitor)),
+                _ => Err(v.unexpected(Expected::Struct {
+                    name: name.to_owned(),
+                    typ: DataType::NewType,
+                })),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Struct {
+                name: name.to_owned(),
+                typ: DataType::NewType,
+            })),
         }
     }
 
@@ -394,17 +411,17 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Seq(v) => visitor.visit_seq(Seq::new(v, self.human_readable)),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Seq)),
         }
     }
 
-    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
         match self.content {
             Content::Tuple(v) => visitor.visit_tuple(Seq::new(v, self.human_readable)),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Tuple(len))),
         }
     }
 
@@ -422,9 +439,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Data::Tuple { values } => {
                     visitor.visit_tuple_struct(name, Seq::new(values, self.human_readable))
                 }
-                data => Err(data.invalid_struct_type(&visitor)),
+                _ => Err(v.unexpected(Expected::Struct {
+                    name: name.to_owned(),
+                    typ: DataType::Tuple,
+                })),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Struct {
+                name: name.to_owned(),
+                typ: DataType::Tuple,
+            })),
         }
     }
 
@@ -434,7 +457,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Map(v) => visitor.visit_map(Map::from((v, self.human_readable))),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Map)),
         }
     }
 
@@ -455,15 +478,21 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     field_names,
                     Map::from((fields, self.human_readable)),
                 ),
-                data => Err(data.invalid_struct_type(&visitor)),
+                _ => Err(v.unexpected(Expected::Struct {
+                    name: name.to_owned(),
+                    typ: DataType::Struct,
+                })),
             },
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Struct {
+                name: name.to_owned(),
+                typ: DataType::Struct,
+            })),
         }
     }
 
     fn deserialize_enum<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         _variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
@@ -471,8 +500,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         V: Visitor<'de>,
     {
         match self.content {
-            Content::Enum(v) => r#enum::visit_enum(v, self.human_readable, visitor),
-            _ => Err(self.content.invalid_type(&visitor)),
+            Content::Enum(v) => r#enum::visit_enum(name, v, self.human_readable, visitor),
+            // The use of `DataType::Unit` here is arbitrary. At this point, the type of enum is not known.
+            _ => Err(self.content.unexpected(Expected::Enum {
+                name: name.to_owned(),
+                typ: DataType::Unit,
+            })),
         }
     }
 
@@ -486,7 +519,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Owned(v) => visitor.visit_string(v),
             },
             Content::Enum(v) => visitor.visit_borrowed_str(v.variant),
-            _ => Err(self.content.invalid_type(&visitor)),
+            _ => Err(self.content.unexpected(Expected::Identifier)),
         }
     }
 

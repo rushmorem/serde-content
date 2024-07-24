@@ -1,11 +1,15 @@
+use crate::de::error::Unexpected;
 use crate::de::identifier::Identifier;
 use crate::de::Map;
 use crate::de::Seq;
 use crate::Content;
 use crate::Data;
+use crate::DataType;
 use crate::Enum;
 use crate::Error;
+use crate::Expected;
 use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;
@@ -30,13 +34,20 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Enum<'de> {
 }
 
 pub(super) struct Deserializer<'de> {
+    // The name of the enum we are expecting
+    expected: &'static str,
     enum_box: Box<Enum<'de>>,
     human_readable: bool,
 }
 
 impl<'de> Deserializer<'de> {
-    pub(super) const fn new(enum_box: Box<Enum<'de>>, human_readable: bool) -> Self {
+    pub(super) const fn new(
+        expected: &'static str,
+        enum_box: Box<Enum<'de>>,
+        human_readable: bool,
+    ) -> Self {
         Self {
+            expected,
             enum_box,
             human_readable,
         }
@@ -62,7 +73,10 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
     fn unit_variant(self) -> Result<(), Self::Error> {
         match self.enum_box.data {
             Data::Unit => Ok(()),
-            _ => Err(self.enum_box.data.invalid_enum_type(&"unit variant")),
+            _ => Err(self.enum_box.unexpected(Expected::Enum {
+                name: self.expected.to_owned(),
+                typ: DataType::Unit,
+            })),
         }
     }
 
@@ -75,7 +89,10 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
                 let deserializer = crate::Deserializer::new(value, self.human_readable);
                 seed.deserialize(deserializer)
             }
-            _ => Err(self.enum_box.data.invalid_enum_type(&"newtype variant")),
+            _ => Err(self.enum_box.unexpected(Expected::Enum {
+                name: self.expected.to_owned(),
+                typ: DataType::NewType,
+            })),
         }
     }
 
@@ -85,7 +102,10 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
     {
         match self.enum_box.data {
             Data::Tuple { values } => visitor.visit_seq(Seq::new(values, self.human_readable)),
-            _ => Err(self.enum_box.data.invalid_enum_type(&"tuple variant")),
+            _ => Err(self.enum_box.unexpected(Expected::Enum {
+                name: self.expected.to_owned(),
+                typ: DataType::Tuple,
+            })),
         }
     }
 
@@ -99,28 +119,15 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
     {
         match self.enum_box.data {
             Data::Struct { fields } => visitor.visit_map(Map::from((fields, self.human_readable))),
-            _ => Err(self.enum_box.data.invalid_enum_type(&"struct variant")),
+            _ => Err(self.enum_box.unexpected(Expected::Enum {
+                name: self.expected.to_owned(),
+                typ: DataType::Struct,
+            })),
         }
     }
-}
-
-enum DataType {
-    Unit,
-    NewType,
-    Tuple,
-    Struct,
 }
 
 impl Data<'_> {
-    const fn typ(&self) -> DataType {
-        match self {
-            Data::Unit => DataType::Unit,
-            Data::NewType { .. } => DataType::NewType,
-            Data::Tuple { .. } => DataType::Tuple,
-            Data::Struct { .. } => DataType::Struct,
-        }
-    }
-
     fn len(&self) -> usize {
         match self {
             Data::Unit => 0,
@@ -144,6 +151,7 @@ impl Data<'_> {
 }
 
 pub(super) fn visit_enum<'de, V>(
+    expected: &'static str,
     v: Box<Enum<'de>>,
     human_readable: bool,
     visitor: V,
@@ -157,7 +165,7 @@ where
     let typ = v.data.typ();
     let len = v.data.len();
     let fields = v.data.field_names();
-    let data = Deserializer::new(v, human_readable);
+    let data = Deserializer::new(expected, v, human_readable);
     match typ {
         DataType::Unit => visitor.visit_unit_variant(name, variant_index, variant, data),
         DataType::NewType => visitor.visit_newtype_variant(name, variant_index, variant, data),
