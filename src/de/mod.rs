@@ -15,6 +15,7 @@ use crate::Error;
 use crate::Expected;
 use crate::Number;
 use crate::HUMAN_READABLE;
+use crate::UNKNOWN_TYPE_NAME;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -33,8 +34,6 @@ use serde::de::SeqAccess;
 use serde::de::Visitor;
 
 pub use error::Unexpected;
-
-pub(crate) const UNKNOWN_TYPE_NAME: &str = "<unknown>";
 
 /// Deserializes a value `T` from [`Content`]
 pub fn from_content<'de, T>(content: Content<'de>) -> Result<T, Error>

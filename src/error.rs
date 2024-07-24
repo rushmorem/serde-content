@@ -1,7 +1,9 @@
 use crate::{DataType, Number};
+use alloc::boxed::Box;
 use alloc::string::String;
 #[cfg(feature = "serde")]
 use alloc::string::ToString;
+use alloc::vec::Vec;
 use core::fmt;
 
 /// Alias for [core::result::Result] with [crate::Error] as the error type.
@@ -178,11 +180,11 @@ impl fmt::Display for Expected {
             Expected::Map => write!(f, "a map"),
             Expected::Option => write!(f, "an option"),
             Expected::Struct { name, typ } => match name.as_str() {
-                crate::de::UNKNOWN_TYPE_NAME => write!(f, "{typ} struct"),
+                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} struct"),
                 name => write!(f, "{typ} struct named {name}"),
             },
             Expected::Enum { name, typ } => match name.as_str() {
-                crate::de::UNKNOWN_TYPE_NAME => write!(f, "{typ} enum variant"),
+                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} enum variant"),
                 name => write!(f, "{typ} enum variant of {name}"),
             },
             Expected::Tuple(len) => write!(f, "a tuple with {len} elements"),
@@ -274,11 +276,11 @@ impl fmt::Display for Found {
             Found::Map => write!(f, "a map"),
             Found::Option => write!(f, "an option"),
             Found::Struct { name, typ } => match name.as_str() {
-                crate::de::UNKNOWN_TYPE_NAME => write!(f, "{typ} struct"),
+                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} struct"),
                 name => write!(f, "{typ} struct named {name}"),
             },
             Found::Enum { name, variant, typ } => match name.as_str() {
-                crate::de::UNKNOWN_TYPE_NAME => write!(f, "{typ} enum variant named {variant}"),
+                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} enum variant named {variant}"),
                 name => write!(f, "{typ} enum variant of {name} named {variant}"),
             },
             Found::Tuple => write!(f, "a tuple"),
