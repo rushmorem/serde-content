@@ -5,23 +5,27 @@ use crate::Content;
 use crate::Data;
 use crate::Enum;
 use crate::Error;
-use crate::HUMAN_READABLE;
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;
 use serde::de;
-use serde::de::IntoDeserializer;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
 use serde::de::VariantAccess;
 use serde::Deserialize;
 
-impl<'de> IntoDeserializer<'de, Error> for Enum<'de> {
+#[cfg(feature = "std")]
+impl<'de> serde::de::IntoDeserializer<'de, Error> for Enum<'de> {
     type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        crate::Deserializer::new(Content::Enum(Box::new(self)), HUMAN_READABLE)
+        use crate::Content;
+        use crate::Deserializer;
+        use crate::HUMAN_READABLE;
+        use alloc::boxed::Box;
+
+        Deserializer::new(Content::Enum(Box::new(self)), HUMAN_READABLE)
     }
 }
 

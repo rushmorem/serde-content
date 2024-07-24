@@ -1,13 +1,16 @@
-use crate::Error;
-use crate::{Content, Deserializer, Number, HUMAN_READABLE};
+use crate::Number;
 use serde::de;
-use serde::de::IntoDeserializer;
 use serde::Deserialize;
 
-impl<'de> IntoDeserializer<'de, Error> for Number {
-    type Deserializer = Deserializer<'de>;
+#[cfg(feature = "std")]
+impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Number {
+    type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
+        use crate::Content;
+        use crate::Deserializer;
+        use crate::HUMAN_READABLE;
+
         Deserializer::new(Content::Number(self), HUMAN_READABLE)
     }
 }

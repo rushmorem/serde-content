@@ -10,7 +10,8 @@ keywords = ["serde", "data-structures"]
 authors = ["rushmorem <rushmore@surrealdb.com>"]
 
 [features]
-default = ["derive"]
+default = ["std", "derive"]
+std = []
 derive = ["serde/derive"]
 
 [dependencies.serde]

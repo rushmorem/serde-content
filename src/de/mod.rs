@@ -23,7 +23,6 @@ use identifier::Identifier;
 use map::Map;
 use seq::Seq;
 use serde::de;
-use serde::de::IntoDeserializer;
 mod error;
 use map::Key;
 use serde::de::EnumAccess;
@@ -59,7 +58,8 @@ impl<'de> Deserializer<'de> {
     }
 }
 
-impl<'de> IntoDeserializer<'de, Error> for Deserializer<'de> {
+#[cfg(feature = "std")]
+impl<'de> serde::de::IntoDeserializer<'de, Error> for Deserializer<'de> {
     type Deserializer = Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
@@ -67,7 +67,8 @@ impl<'de> IntoDeserializer<'de, Error> for Deserializer<'de> {
     }
 }
 
-impl<'de> IntoDeserializer<'de, Error> for Content<'de> {
+#[cfg(feature = "std")]
+impl<'de> serde::de::IntoDeserializer<'de, Error> for Content<'de> {
     type Deserializer = Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {

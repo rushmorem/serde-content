@@ -23,6 +23,9 @@ impl fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
+
 #[cfg(feature = "serde")]
 impl serde::ser::Error for Error {
     fn custom<T>(msg: T) -> Self
