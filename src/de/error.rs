@@ -1,4 +1,6 @@
 use crate::{Content, Enum, Error, Expected, Found, Number, Struct};
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 
 /// A convenience wrapper for constructing [crate::Found] and returning an error.
 pub trait Unexpected {

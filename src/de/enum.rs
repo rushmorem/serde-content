@@ -9,6 +9,7 @@ use crate::Enum;
 use crate::Error;
 use crate::Expected;
 use alloc::borrow::Cow;
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;

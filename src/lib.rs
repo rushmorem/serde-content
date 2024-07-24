@@ -106,6 +106,7 @@ impl Data<'_> {
         }
     }
 
+    #[cfg(feature = "serde")]
     const fn typ(&self) -> DataType {
         match self {
             Data::Unit => DataType::Unit,

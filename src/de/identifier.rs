@@ -3,6 +3,8 @@ use crate::DataType;
 use crate::Error;
 use crate::Expected;
 use crate::Found;
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
 use serde::de::Deserializer;
 use serde::de::Visitor;
 
