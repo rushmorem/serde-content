@@ -1,7 +1,8 @@
-use crate::{DataType, Number};
+use crate::DataType;
+use crate::Number;
 use alloc::boxed::Box;
+use alloc::format;
 use alloc::string::String;
-#[cfg(feature = "serde")]
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::fmt;
@@ -12,7 +13,6 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// The error type returned by this crate.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "derive", derive(serde::Serialize, serde::Deserialize))]
-#[non_exhaustive] // In case we add new error variants in future.
 pub struct Error {
     kind: Box<ErrorKind>,
 }
@@ -39,6 +39,7 @@ impl Error {
 /// The kind of error returned by [`Error::kind`]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "derive", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive] // In case we add new error variants in future.
 pub enum ErrorKind {
     /// Found an unexpected type when deserialising.
     Unexpected {
@@ -205,6 +206,20 @@ impl fmt::Display for DataType {
     }
 }
 
+/// Struct and enum data type for error messages.
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "derive", derive(serde::Serialize, serde::Deserialize))]
+pub enum Data {
+    /// Unit struct or unit enum variant.
+    Unit,
+    /// Newtype struct or enum variant.
+    NewType(Found),
+    /// Tuple struct or enum variant.
+    Tuple(Vec<Found>),
+    /// Object-like struct or enum variant.
+    Struct(Vec<(String, Found)>),
+}
+
 /// The type that was found.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "derive", derive(serde::Serialize, serde::Deserialize))]
@@ -222,17 +237,17 @@ pub enum Found {
     /// Found a Rust byte array.
     Bytes(Vec<u8>),
     /// Found an array of Rust values.
-    Seq,
+    Seq(Vec<Found>),
     /// Found a map of Rust values.
-    Map,
+    Map(Vec<(Found, Found)>),
     /// Found optional Rust values.
-    Option,
+    Option(Option<Box<Found>>),
     /// Found a Rust struct.
     Struct {
         /// The name of the struct.
         name: String,
-        /// The type of the struct
-        typ: DataType,
+        /// The data of the struct
+        data: Box<Data>,
     },
     /// Found a Rust enum.
     Enum {
@@ -240,11 +255,11 @@ pub enum Found {
         name: String,
         /// The variant of the enum.
         variant: String,
-        /// The type of the enum.
-        typ: DataType,
+        /// The data of the enum.
+        data: Box<Data>,
     },
     /// Found a Rust tuple.
-    Tuple,
+    Tuple(Vec<Found>),
     /// Found a struct field or an enum variant.
     Identifier(String),
 }
@@ -253,38 +268,99 @@ pub enum Found {
 impl fmt::Display for Found {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Found::Unit => write!(f, "a unit"),
-            Found::Bool(v) => write!(f, "a boolean {v}"),
+            Found::Unit => write!(f, "()"),
+            Found::Bool(v) => write!(f, "{v}"),
             Found::Number(v) => match v {
-                Number::I8(v) => write!(f, "an 8-bit signed integer {v}"),
-                Number::U8(v) => write!(f, "an 8-bit unsigned integer {v}"),
-                Number::I16(v) => write!(f, "a 16-bit signed integer {v}"),
-                Number::U16(v) => write!(f, "a 16-bit unsigned integer {v}"),
-                Number::I32(v) => write!(f, "a 32-bit signed integer {v}"),
-                Number::U32(v) => write!(f, "a 32-bit unsigned integer {v}"),
-                Number::F32(v) => write!(f, "a 32-bit floating point {v}"),
-                Number::I64(v) => write!(f, "a 64-bit signed integer {v}"),
-                Number::U64(v) => write!(f, "a 64-bit unsigned integer {v}"),
-                Number::F64(v) => write!(f, "a 64-bit floating point {v}"),
-                Number::I128(v) => write!(f, "a 128-bit signed integer {v}"),
-                Number::U128(v) => write!(f, "a 128-bit unsigned integer {v}"),
+                Number::I8(v) => write!(f, "{v}i8"),
+                Number::U8(v) => write!(f, "{v}u8"),
+                Number::I16(v) => write!(f, "{v}i16"),
+                Number::U16(v) => write!(f, "{v}u16"),
+                Number::I32(v) => write!(f, "{v}i32"),
+                Number::U32(v) => write!(f, "{v}u32"),
+                Number::F32(v) => write!(f, "{v}f32"),
+                Number::I64(v) => write!(f, "{v}i64"),
+                Number::U64(v) => write!(f, "{v}u64"),
+                Number::F64(v) => write!(f, "{v}f64"),
+                Number::I128(v) => write!(f, "{v}i128"),
+                Number::U128(v) => write!(f, "{v}u128"),
             },
-            Found::Char(v) => write!(f, "a character {v}"),
-            Found::String(v) => write!(f, "a string `{v}`"),
-            Found::Bytes(_) => write!(f, "a byte array"),
-            Found::Seq => write!(f, "a sequence"),
-            Found::Map => write!(f, "a map"),
-            Found::Option => write!(f, "an option"),
-            Found::Struct { name, typ } => match name.as_str() {
-                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} struct"),
-                name => write!(f, "{typ} struct named {name}"),
+            Found::Char(v) => write!(f, "'{v}'"),
+            Found::String(v) => write!(f, "{v:?}"),
+            Found::Bytes(v) => write!(f, "&{v:?}"),
+            Found::Seq(v) => {
+                f.write_str("[")?;
+                let data = v.iter().map(Self::to_string).collect::<Vec<_>>();
+                f.write_str(&data.join(", "))?;
+                f.write_str("]")
+            }
+            Found::Map(v) => {
+                f.write_str("{ ")?;
+                let data = v
+                    .iter()
+                    .map(|(k, v)| format!("{k}: {v}"))
+                    .collect::<Vec<_>>();
+                f.write_str(&data.join(", "))?;
+                f.write_str(" }")
+            }
+            Found::Option(v) => match v {
+                Some(v) => write!(f, "Some({v})"),
+                None => write!(f, "None"),
             },
-            Found::Enum { name, variant, typ } => match name.as_str() {
-                crate::UNKNOWN_TYPE_NAME => write!(f, "{typ} enum variant named {variant}"),
-                name => write!(f, "{typ} enum variant of {name} named {variant}"),
+            Found::Struct { name, data } => match name.as_str() {
+                crate::UNKNOWN_TYPE_NAME => write!(f, "struct"),
+                name => match data.as_ref() {
+                    Data::Unit => write!(f, "{name}"),
+                    Data::NewType(v) => write!(f, "{name}({v})"),
+                    Data::Tuple(v) => {
+                        write!(f, "{name}(")?;
+                        let data = v.iter().map(Self::to_string).collect::<Vec<_>>();
+                        f.write_str(&data.join(", "))?;
+                        f.write_str(")")
+                    }
+                    Data::Struct(v) => {
+                        write!(f, "{name} {{ ")?;
+                        let data = v
+                            .iter()
+                            .map(|(k, v)| format!("{k}: {v}"))
+                            .collect::<Vec<_>>();
+                        f.write_str(&data.join(", "))?;
+                        f.write_str(" }")
+                    }
+                },
             },
-            Found::Tuple => write!(f, "a tuple"),
-            Found::Identifier(v) => write!(f, "found a struct field or enum variant {v}"),
+            Found::Enum {
+                name,
+                variant,
+                data,
+            } => match name.as_str() {
+                crate::UNKNOWN_TYPE_NAME => write!(f, "enum"),
+                name => match data.as_ref() {
+                    Data::Unit => write!(f, "{name}::{variant}"),
+                    Data::NewType(v) => write!(f, "{name}::{variant}({v})"),
+                    Data::Tuple(v) => {
+                        write!(f, "{name}::{variant}(")?;
+                        let data = v.iter().map(Self::to_string).collect::<Vec<_>>();
+                        f.write_str(&data.join(", "))?;
+                        f.write_str(")")
+                    }
+                    Data::Struct(v) => {
+                        write!(f, "{name}::{variant} {{ ")?;
+                        let data = v
+                            .iter()
+                            .map(|(k, v)| format!("{k}: {v}"))
+                            .collect::<Vec<_>>();
+                        f.write_str(&data.join(", "))?;
+                        f.write_str(" }")
+                    }
+                },
+            },
+            Found::Tuple(v) => {
+                f.write_str("(")?;
+                let data = v.iter().map(Self::to_string).collect::<Vec<_>>();
+                f.write_str(&data.join(", "))?;
+                f.write_str(")")
+            }
+            Found::Identifier(v) => write!(f, "{v}"),
         }
     }
 }
