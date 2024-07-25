@@ -381,7 +381,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
 
     fn deserialize_newtype_struct<V>(
         self,
-        name: &'static str,
+        _name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -393,15 +393,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     let deserializer = Deserializer::new(value, self.human_readable);
                     visitor.visit_newtype_struct_with_name(v.name, deserializer)
                 }
-                _ => Err(v.unexpected(Expected::Struct {
-                    name: name.to_owned(),
-                    typ: DataType::NewType,
-                })),
+                _ => {
+                    let deserializer = Deserializer::new(Content::Struct(v), self.human_readable);
+                    visitor.visit_newtype_struct(deserializer)
+                }
             },
-            _ => Err(self.content.unexpected(Expected::Struct {
-                name: name.to_owned(),
-                typ: DataType::NewType,
-            })),
+            _ => visitor.visit_newtype_struct(self),
         }
     }
 
