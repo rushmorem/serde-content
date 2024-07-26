@@ -1,4 +1,3 @@
-use crate::de::UNKNOWN_TYPE_NAME;
 use crate::{Data, Struct};
 use alloc::{borrow::Cow, vec::Vec};
 use serde::{de, Deserialize};
@@ -42,18 +41,6 @@ impl<'de> de::Visitor<'de> for Visitor {
         Ok(Struct {
             name,
             data: Data::Unit,
-        })
-    }
-
-    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        Ok(Struct {
-            name: UNKNOWN_TYPE_NAME,
-            data: Data::NewType {
-                value: Deserialize::deserialize(deserializer)?,
-            },
         })
     }
 
