@@ -15,7 +15,6 @@ use crate::Error;
 use crate::Expected;
 use crate::Number;
 use crate::HUMAN_READABLE;
-use crate::UNKNOWN_TYPE_NAME;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -143,9 +142,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     visitor.visit_struct(v.name, &field_names, data)
                 }
             },
-            Content::Enum(v) => {
-                r#enum::visit_enum(UNKNOWN_TYPE_NAME, v, self.human_readable, visitor)
-            }
+            Content::Enum(v) => r#enum::visit_enum(v.name, v, self.human_readable, visitor),
             Content::Tuple(v) => visitor.visit_tuple(Seq::new(v, self.human_readable)),
         }
     }
@@ -368,13 +365,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
             Content::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit_struct(name),
                 _ => Err(v.unexpected(Expected::Struct {
-                    name: name.to_owned(),
-                    typ: DataType::Unit,
+                    name: Some(name.to_owned()),
+                    typ: Some(DataType::Unit),
                 })),
             },
             _ => Err(self.content.unexpected(Expected::Struct {
-                name: name.to_owned(),
-                typ: DataType::Unit,
+                name: Some(name.to_owned()),
+                typ: Some(DataType::Unit),
             })),
         }
     }
@@ -437,13 +434,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     visitor.visit_tuple_struct(name, Seq::new(values, self.human_readable))
                 }
                 _ => Err(v.unexpected(Expected::Struct {
-                    name: name.to_owned(),
-                    typ: DataType::Tuple,
+                    name: Some(name.to_owned()),
+                    typ: Some(DataType::Tuple),
                 })),
             },
             _ => Err(self.content.unexpected(Expected::Struct {
-                name: name.to_owned(),
-                typ: DataType::Tuple,
+                name: Some(name.to_owned()),
+                typ: Some(DataType::Tuple),
             })),
         }
     }
@@ -476,13 +473,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     Map::from((fields, self.human_readable)),
                 ),
                 _ => Err(v.unexpected(Expected::Struct {
-                    name: name.to_owned(),
-                    typ: DataType::Struct,
+                    name: Some(name.to_owned()),
+                    typ: Some(DataType::Struct),
                 })),
             },
             _ => Err(self.content.unexpected(Expected::Struct {
-                name: name.to_owned(),
-                typ: DataType::Struct,
+                name: Some(name.to_owned()),
+                typ: Some(DataType::Struct),
             })),
         }
     }
@@ -498,10 +495,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.content {
             Content::Enum(v) => r#enum::visit_enum(name, v, self.human_readable, visitor),
-            // The use of `DataType::Unit` here is arbitrary. At this point, the type of enum is not known.
             _ => Err(self.content.unexpected(Expected::Enum {
-                name: name.to_owned(),
-                typ: DataType::Unit,
+                name: Some(name.to_owned()),
+                typ: None,
             })),
         }
     }

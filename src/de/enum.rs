@@ -74,8 +74,8 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         match self.enum_box.data {
             Data::Unit => Ok(()),
             _ => Err(self.enum_box.unexpected(Expected::Enum {
-                name: self.expected.to_owned(),
-                typ: DataType::Unit,
+                name: Some(self.expected.to_owned()),
+                typ: Some(DataType::Unit),
             })),
         }
     }
@@ -90,8 +90,8 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
                 seed.deserialize(deserializer)
             }
             _ => Err(self.enum_box.unexpected(Expected::Enum {
-                name: self.expected.to_owned(),
-                typ: DataType::NewType,
+                name: Some(self.expected.to_owned()),
+                typ: Some(DataType::NewType),
             })),
         }
     }
@@ -103,8 +103,8 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         match self.enum_box.data {
             Data::Tuple { values } => visitor.visit_seq(Seq::new(values, self.human_readable)),
             _ => Err(self.enum_box.unexpected(Expected::Enum {
-                name: self.expected.to_owned(),
-                typ: DataType::Tuple,
+                name: Some(self.expected.to_owned()),
+                typ: Some(DataType::Tuple),
             })),
         }
     }
@@ -120,8 +120,8 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         match self.enum_box.data {
             Data::Struct { fields } => visitor.visit_map(Map::from((fields, self.human_readable))),
             _ => Err(self.enum_box.unexpected(Expected::Enum {
-                name: self.expected.to_owned(),
-                typ: DataType::Struct,
+                name: Some(self.expected.to_owned()),
+                typ: Some(DataType::Struct),
             })),
         }
     }

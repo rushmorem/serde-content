@@ -185,8 +185,8 @@ impl<'de> Deserializer<'de> for Identifier {
         V: Visitor<'de>,
     {
         Err(self.unexpected(Expected::Struct {
-            name: name.to_owned(),
-            typ: DataType::Unit,
+            name: Some(name.to_owned()),
+            typ: Some(DataType::Unit),
         }))
     }
 
@@ -199,8 +199,8 @@ impl<'de> Deserializer<'de> for Identifier {
         V: Visitor<'de>,
     {
         Err(self.unexpected(Expected::Struct {
-            name: name.to_owned(),
-            typ: DataType::NewType,
+            name: Some(name.to_owned()),
+            typ: Some(DataType::NewType),
         }))
     }
 
@@ -228,8 +228,8 @@ impl<'de> Deserializer<'de> for Identifier {
         V: Visitor<'de>,
     {
         Err(self.unexpected(Expected::Struct {
-            name: name.to_owned(),
-            typ: DataType::Tuple,
+            name: Some(name.to_owned()),
+            typ: Some(DataType::Tuple),
         }))
     }
 
@@ -250,8 +250,8 @@ impl<'de> Deserializer<'de> for Identifier {
         V: Visitor<'de>,
     {
         Err(self.unexpected(Expected::Struct {
-            name: name.to_owned(),
-            typ: DataType::Struct,
+            name: Some(name.to_owned()),
+            typ: Some(DataType::Struct),
         }))
     }
 
@@ -264,10 +264,9 @@ impl<'de> Deserializer<'de> for Identifier {
     where
         V: Visitor<'de>,
     {
-        // The use of `DataType::Unit` here is arbitrary. At this point, the type of enum is not known.
         Err(self.unexpected(Expected::Enum {
-            name: name.to_owned(),
-            typ: DataType::Unit,
+            name: Some(name.to_owned()),
+            typ: None,
         }))
     }
 }
