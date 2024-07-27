@@ -11,7 +11,6 @@ mod tuple;
 use crate::Data;
 use crate::Error;
 use crate::Number;
-use crate::HUMAN_READABLE;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -35,19 +34,30 @@ pub fn to_content<T>(value: T) -> Result<Content, Error>
 where
     T: ser::Serialize,
 {
-    value.serialize(Serializer::new(HUMAN_READABLE))
+    value.serialize(Serializer::new())
 }
 
 /// A structure for serialising Rust values into [crate::Content].
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
 pub struct Serializer {
     human_readable: bool,
 }
 
 impl Serializer {
-    /// Creates a serializer
-    pub const fn new(human_readable: bool) -> Self {
-        Self { human_readable }
+    /// Creates a serializer.
+    ///
+    /// The serializer created doesn't serialize in human-readable form. To serialize
+    /// in human-readable form, call [human_readable] on the resulting serializer.
+    pub const fn new() -> Self {
+        Self {
+            human_readable: false,
+        }
+    }
+
+    /// Make `Serialize` implementations serialize in human-readable form.
+    pub const fn human_readable(mut self) -> Self {
+        self.human_readable = true;
+        self
     }
 }
 

@@ -26,7 +26,9 @@ impl ser::SerializeMap for Map {
     where
         T: ?Sized + ser::Serialize,
     {
-        let key = key.serialize(Serializer::new(self.human_readable))?;
+        let key = key.serialize(Serializer {
+            human_readable: self.human_readable,
+        })?;
         self.vec.push((key, Content::Unit));
         Ok(())
     }
@@ -36,7 +38,9 @@ impl ser::SerializeMap for Map {
         T: ?Sized + ser::Serialize,
     {
         if let Some(last) = self.vec.last_mut() {
-            last.1 = value.serialize(Serializer::new(self.human_readable))?;
+            last.1 = value.serialize(Serializer {
+                human_readable: self.human_readable,
+            })?;
         }
         Ok(())
     }
@@ -46,7 +50,9 @@ impl ser::SerializeMap for Map {
         K: ?Sized + ser::Serialize,
         V: ?Sized + ser::Serialize,
     {
-        let serializer = Serializer::new(self.human_readable);
+        let serializer = Serializer {
+            human_readable: self.human_readable,
+        };
         let key = key.serialize(serializer)?;
         let value = value.serialize(serializer)?;
         self.vec.push((key, value));
