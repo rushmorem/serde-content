@@ -37,7 +37,10 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
         match self.iter.peek_mut() {
             Some((key, _)) => match mem::replace(key, Key::Content(Content::Unit)) {
                 Key::Content(content) => {
-                    let deserializer = Deserializer::new(content, self.human_readable);
+                    let deserializer = Deserializer {
+                        content,
+                        human_readable: self.human_readable,
+                    };
                     seed.deserialize(deserializer).map(Some)
                 }
                 Key::Identifier(identifier) => seed.deserialize(identifier).map(Some),
@@ -52,7 +55,10 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
     {
         match self.iter.next() {
             Some((_, value)) => {
-                let deserializer = Deserializer::new(value, self.human_readable);
+                let deserializer = Deserializer {
+                    content: value,
+                    human_readable: self.human_readable,
+                };
                 seed.deserialize(deserializer)
             }
             None => Err(de::Error::custom("[BUG] value is missing")),
@@ -73,11 +79,17 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                 let key = match key {
                     Key::Identifier(identifier) => kseed.deserialize(identifier)?,
                     Key::Content(content) => {
-                        let deserializer = Deserializer::new(content, self.human_readable);
+                        let deserializer = Deserializer {
+                            content,
+                            human_readable: self.human_readable,
+                        };
                         kseed.deserialize(deserializer)?
                     }
                 };
-                let deserializer = Deserializer::new(value, self.human_readable);
+                let deserializer = Deserializer {
+                    content: value,
+                    human_readable: self.human_readable,
+                };
                 let value = vseed.deserialize(deserializer)?;
                 Ok(Some((key, value)))
             }

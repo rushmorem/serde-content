@@ -26,10 +26,9 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Enum<'de> {
     fn into_deserializer(self) -> Self::Deserializer {
         use crate::Content;
         use crate::Deserializer;
-        use crate::HUMAN_READABLE;
         use alloc::boxed::Box;
 
-        Deserializer::new(Content::Enum(Box::new(self)), HUMAN_READABLE)
+        Deserializer::new(Content::Enum(Box::new(self)))
     }
 }
 
@@ -86,7 +85,10 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
     {
         match self.enum_box.data {
             Data::NewType { value } => {
-                let deserializer = crate::Deserializer::new(value, self.human_readable);
+                let deserializer = crate::Deserializer {
+                    content: value,
+                    human_readable: self.human_readable,
+                };
                 seed.deserialize(deserializer)
             }
             _ => Err(self.enum_box.unexpected(Expected::Enum {

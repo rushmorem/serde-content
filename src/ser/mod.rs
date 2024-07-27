@@ -47,7 +47,7 @@ impl Serializer {
     /// Creates a serializer.
     ///
     /// The serializer created doesn't serialize in human-readable form. To serialize
-    /// in human-readable form, call [human_readable] on the resulting serializer.
+    /// in human-readable form, call [Serializer::human_readable] on the resulting serializer.
     pub const fn new() -> Self {
         Self {
             human_readable: false,
