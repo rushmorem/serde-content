@@ -28,7 +28,10 @@ impl<'de> de::SeqAccess<'de> for Seq<'de> {
     {
         match self.iter.next() {
             Some(value) => {
-                let deserializer = Deserializer::new(value, self.human_readable);
+                let deserializer = Deserializer {
+                    content: value,
+                    human_readable: self.human_readable,
+                };
                 seed.deserialize(deserializer).map(Some)
             }
             None => Ok(None),

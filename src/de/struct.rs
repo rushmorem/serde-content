@@ -9,10 +9,9 @@ impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Struct<'de> {
     fn into_deserializer(self) -> Self::Deserializer {
         use crate::Content;
         use crate::Deserializer;
-        use crate::HUMAN_READABLE;
         use alloc::boxed::Box;
 
-        Deserializer::new(Content::Struct(Box::new(self)), HUMAN_READABLE)
+        Deserializer::new(Content::Struct(Box::new(self)))
     }
 }
 

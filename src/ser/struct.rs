@@ -56,7 +56,9 @@ impl ser::SerializeStruct for Struct {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Struct { fields } = &mut self.r#struct.data {
-            let value = value.serialize(Serializer::new(self.human_readable))?;
+            let value = value.serialize(Serializer {
+                human_readable: self.human_readable,
+            })?;
             fields.push((key, value));
         }
         Ok(())
@@ -76,7 +78,9 @@ impl ser::SerializeTupleStruct for Struct {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Tuple { values } = &mut self.r#struct.data {
-            let value = value.serialize(Serializer::new(self.human_readable))?;
+            let value = value.serialize(Serializer {
+                human_readable: self.human_readable,
+            })?;
             values.push(value);
         }
         Ok(())

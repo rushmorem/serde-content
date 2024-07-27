@@ -26,7 +26,9 @@ impl ser::SerializeTuple for Tuple {
     where
         T: ?Sized + ser::Serialize,
     {
-        let value = value.serialize(Serializer::new(self.human_readable))?;
+        let value = value.serialize(Serializer {
+            human_readable: self.human_readable,
+        })?;
         self.vec.push(value);
         Ok(())
     }

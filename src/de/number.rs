@@ -9,9 +9,8 @@ impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Number {
     fn into_deserializer(self) -> Self::Deserializer {
         use crate::Content;
         use crate::Deserializer;
-        use crate::HUMAN_READABLE;
 
-        Deserializer::new(Content::Number(self), HUMAN_READABLE)
+        Deserializer::new(Content::Number(self))
     }
 }
 

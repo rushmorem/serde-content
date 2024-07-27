@@ -14,7 +14,6 @@ use crate::DataType;
 use crate::Error;
 use crate::Expected;
 use crate::Number;
-use crate::HUMAN_READABLE;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -39,7 +38,7 @@ pub fn from_content<'de, T>(content: Content<'de>) -> Result<T, Error>
 where
     T: de::Deserialize<'de>,
 {
-    let deserializer = Deserializer::new(content, HUMAN_READABLE);
+    let deserializer = Deserializer::new(content);
     T::deserialize(deserializer)
 }
 
@@ -51,12 +50,21 @@ pub struct Deserializer<'de> {
 }
 
 impl<'de> Deserializer<'de> {
-    /// Creates a deserializer
-    pub const fn new(content: Content<'de>, human_readable: bool) -> Self {
+    /// Creates a deserializer.
+    ///
+    /// The deserializer created doesn't deserialize in human-readable form. To deserialize
+    /// in human-readable form, call [Deserializer::human_readable] on the resulting deserializer.
+    pub const fn new(content: Content<'de>) -> Self {
         Self {
             content,
-            human_readable,
+            human_readable: false,
         }
+    }
+
+    /// Make `Deserialize` implementations deserialize in human-readable form.
+    pub fn human_readable(&mut self) -> &mut Self {
+        self.human_readable = true;
+        self
     }
 }
 
@@ -74,14 +82,14 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Content<'de> {
     type Deserializer = Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        Deserializer::new(self, HUMAN_READABLE)
+        Deserializer::new(self)
     }
 }
 
 impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     type Error = Error;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
@@ -115,16 +123,16 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
             Content::Map(v) => visitor.visit_map(Map::from((v, self.human_readable))),
             Content::Option(v) => match v {
                 Some(v) => {
-                    let deserializer = Deserializer::new(*v, self.human_readable);
-                    visitor.visit_some(deserializer)
+                    self.content = *v;
+                    visitor.visit_some(self)
                 }
                 None => visitor.visit_none(),
             },
             Content::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit_struct(v.name),
                 Data::NewType { value } => {
-                    let deserializer = Deserializer::new(value, self.human_readable);
-                    visitor.visit_newtype_struct_with_name(v.name, deserializer)
+                    self.content = value;
+                    visitor.visit_newtype_struct_with_name(v.name, self)
                 }
                 Data::Tuple { values } => {
                     visitor.visit_tuple_struct(v.name, Seq::new(values, self.human_readable))
@@ -327,15 +335,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         self.deserialize_bytes(visitor)
     }
 
-    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_option<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
         match self.content {
             Content::Option(v) => match v {
                 Some(v) => {
-                    let deserializer = Deserializer::new(*v, self.human_readable);
-                    visitor.visit_some(deserializer)
+                    self.content = *v;
+                    visitor.visit_some(self)
                 }
                 None => visitor.visit_none(),
             },
@@ -377,7 +385,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     }
 
     fn deserialize_newtype_struct<V>(
-        self,
+        mut self,
         _name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Self::Error>
@@ -387,12 +395,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         match self.content {
             Content::Struct(v) => match v.data {
                 Data::NewType { value } => {
-                    let deserializer = Deserializer::new(value, self.human_readable);
-                    visitor.visit_newtype_struct_with_name(v.name, deserializer)
+                    self.content = value;
+                    visitor.visit_newtype_struct_with_name(v.name, self)
                 }
                 _ => {
-                    let deserializer = Deserializer::new(Content::Struct(v), self.human_readable);
-                    visitor.visit_newtype_struct(deserializer)
+                    self.content = Content::Struct(v);
+                    visitor.visit_newtype_struct(self)
                 }
             },
             _ => visitor.visit_newtype_struct(self),
