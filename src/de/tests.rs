@@ -1,9 +1,9 @@
 #![cfg(feature = "derive")]
 #![cfg(test)]
 
-use crate::from_content;
 use crate::Content;
 use crate::Data;
+use crate::Deserializer;
 use crate::Enum;
 use crate::Number;
 use crate::Struct;
@@ -16,83 +16,174 @@ use alloc::vec::Vec;
 use core::fmt;
 use serde::de::Visitor;
 use serde::Deserialize;
-use serde::Deserializer;
 
 #[test]
 fn deserialize_bool() {
-    assert_eq!(true, from_content(Content::Bool(true)).unwrap());
-    assert_eq!(false, from_content(Content::Bool(false)).unwrap());
+    assert!(Deserializer::new(Content::Bool(true))
+        .deserialize::<bool>()
+        .unwrap());
+    assert!(!Deserializer::new(Content::Bool(false))
+        .deserialize::<bool>()
+        .unwrap());
 }
 
 #[test]
 fn deserialize_i8() {
-    assert_eq!(0i8, from_content(Content::Number(Number::I8(0))).unwrap());
-    assert_eq!(1i8, from_content(Content::Number(Number::I8(1))).unwrap());
+    assert_eq!(
+        0i8,
+        Deserializer::new(Content::Number(Number::I8(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1i8,
+        Deserializer::new(Content::Number(Number::I8(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_i16() {
-    assert_eq!(0i16, from_content(Content::Number(Number::I16(0))).unwrap());
-    assert_eq!(1i16, from_content(Content::Number(Number::I16(1))).unwrap());
+    assert_eq!(
+        0i16,
+        Deserializer::new(Content::Number(Number::I16(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1i16,
+        Deserializer::new(Content::Number(Number::I16(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_i32() {
-    assert_eq!(0i32, from_content(Content::Number(Number::I32(0))).unwrap());
-    assert_eq!(1i32, from_content(Content::Number(Number::I32(1))).unwrap());
+    assert_eq!(
+        0i32,
+        Deserializer::new(Content::Number(Number::I32(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1i32,
+        Deserializer::new(Content::Number(Number::I32(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_i64() {
-    assert_eq!(0i64, from_content(Content::Number(Number::I64(0))).unwrap());
-    assert_eq!(1i64, from_content(Content::Number(Number::I64(1))).unwrap());
+    assert_eq!(
+        0i64,
+        Deserializer::new(Content::Number(Number::I64(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1i64,
+        Deserializer::new(Content::Number(Number::I64(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_i128() {
     assert_eq!(
         0i128,
-        from_content(Content::Number(Number::I128(0))).unwrap()
+        Deserializer::new(Content::Number(Number::I128(0)))
+            .deserialize()
+            .unwrap()
     );
     assert_eq!(
         1i128,
-        from_content(Content::Number(Number::I128(1))).unwrap()
+        Deserializer::new(Content::Number(Number::I128(1)))
+            .deserialize()
+            .unwrap()
     );
 }
 
 #[test]
 fn deserialize_u8() {
-    assert_eq!(0u8, from_content(Content::Number(Number::U8(0))).unwrap());
-    assert_eq!(1u8, from_content(Content::Number(Number::U8(1))).unwrap());
+    assert_eq!(
+        0u8,
+        Deserializer::new(Content::Number(Number::U8(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1u8,
+        Deserializer::new(Content::Number(Number::U8(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_u16() {
-    assert_eq!(0u16, from_content(Content::Number(Number::U16(0))).unwrap());
-    assert_eq!(1u16, from_content(Content::Number(Number::U16(1))).unwrap());
+    assert_eq!(
+        0u16,
+        Deserializer::new(Content::Number(Number::U16(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1u16,
+        Deserializer::new(Content::Number(Number::U16(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_u32() {
-    assert_eq!(0u32, from_content(Content::Number(Number::U32(0))).unwrap());
-    assert_eq!(1u32, from_content(Content::Number(Number::U32(1))).unwrap());
+    assert_eq!(
+        0u32,
+        Deserializer::new(Content::Number(Number::U32(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1u32,
+        Deserializer::new(Content::Number(Number::U32(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_u64() {
-    assert_eq!(0u64, from_content(Content::Number(Number::U64(0))).unwrap());
-    assert_eq!(1u64, from_content(Content::Number(Number::U64(1))).unwrap());
+    assert_eq!(
+        0u64,
+        Deserializer::new(Content::Number(Number::U64(0)))
+            .deserialize()
+            .unwrap()
+    );
+    assert_eq!(
+        1u64,
+        Deserializer::new(Content::Number(Number::U64(1)))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_u128() {
     assert_eq!(
         0u128,
-        from_content(Content::Number(Number::U128(0))).unwrap()
+        Deserializer::new(Content::Number(Number::U128(0)))
+            .deserialize()
+            .unwrap()
     );
     assert_eq!(
         1u128,
-        from_content(Content::Number(Number::U128(1))).unwrap()
+        Deserializer::new(Content::Number(Number::U128(1)))
+            .deserialize()
+            .unwrap()
     );
 }
 
@@ -100,11 +191,15 @@ fn deserialize_u128() {
 fn deserialize_f32() {
     assert_eq!(
         0f32,
-        from_content(Content::Number(Number::F32(0.0))).unwrap()
+        Deserializer::new(Content::Number(Number::F32(0.0)))
+            .deserialize()
+            .unwrap()
     );
     assert_eq!(
         1f32,
-        from_content(Content::Number(Number::F32(1.0))).unwrap()
+        Deserializer::new(Content::Number(Number::F32(1.0)))
+            .deserialize()
+            .unwrap()
     );
 }
 
@@ -112,17 +207,24 @@ fn deserialize_f32() {
 fn deserialize_f64() {
     assert_eq!(
         0f64,
-        from_content(Content::Number(Number::F64(0.0))).unwrap()
+        Deserializer::new(Content::Number(Number::F64(0.0)))
+            .deserialize()
+            .unwrap()
     );
     assert_eq!(
         1f64,
-        from_content(Content::Number(Number::F64(1.0))).unwrap()
+        Deserializer::new(Content::Number(Number::F64(1.0)))
+            .deserialize()
+            .unwrap()
     );
 }
 
 #[test]
 fn deserialize_char() {
-    assert_eq!('a', from_content(Content::Char('a')).unwrap());
+    assert_eq!(
+        'a',
+        Deserializer::new(Content::Char('a')).deserialize().unwrap()
+    );
 }
 
 #[test]
@@ -130,19 +232,27 @@ fn deserialize_string() {
     let foo = String::from("foo");
     assert_eq!(
         foo,
-        from_content::<&str>(Content::String(Cow::Borrowed(&foo))).unwrap()
+        Deserializer::new(Content::String(Cow::Borrowed(&foo)))
+            .deserialize::<&str>()
+            .unwrap()
     );
     assert_eq!(
         foo,
-        from_content::<String>(Content::String(Cow::Owned(foo.clone()))).unwrap()
+        Deserializer::new(Content::String(Cow::Owned(foo.clone())))
+            .deserialize::<String>()
+            .unwrap()
     );
     assert_eq!(
         String::new(),
-        from_content::<&str>(Content::String(Cow::Borrowed(""))).unwrap()
+        Deserializer::new(Content::String(Cow::Borrowed("")))
+            .deserialize::<&str>()
+            .unwrap()
     );
     assert_eq!(
         String::new(),
-        from_content::<String>(Content::String(Cow::Owned(String::new()))).unwrap()
+        Deserializer::new(Content::String(Cow::Owned(String::new())))
+            .deserialize::<String>()
+            .unwrap()
     );
 }
 
@@ -153,7 +263,7 @@ fn deserialize_bytes() {
     impl Deserialize<'static> for Bytes {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
-            D: Deserializer<'static>,
+            D: serde::Deserializer<'static>,
         {
             struct BytesVisitor;
             impl Visitor<'static> for BytesVisitor {
@@ -176,31 +286,54 @@ fn deserialize_bytes() {
     }
     assert_eq!(
         Bytes(b""),
-        from_content(Content::Bytes(Cow::Borrowed(b""))).unwrap(),
+        Deserializer::new(Content::Bytes(Cow::Borrowed(b"")))
+            .deserialize()
+            .unwrap(),
     );
     assert_eq!(
         Bytes(b"foo"),
-        from_content(Content::Bytes(Cow::Borrowed(b"foo"))).unwrap(),
+        Deserializer::new(Content::Bytes(Cow::Borrowed(b"foo")))
+            .deserialize()
+            .unwrap(),
     );
 }
 
 #[test]
 fn deserialize_option() {
-    assert_eq!(None::<&str>, from_content(Content::Option(None)).unwrap());
+    assert_eq!(
+        None::<&str>,
+        Deserializer::new(Content::Option(None))
+            .deserialize()
+            .unwrap()
+    );
     assert_eq!(
         Some('a'),
-        from_content(Content::Option(Some(Box::new(Content::Char('a'))))).unwrap()
+        Deserializer::new(Content::Option(Some(Box::new(Content::Char('a')))))
+            .deserialize()
+            .unwrap()
     );
-    assert_eq!(Some(()), from_content(Content::Unit).unwrap());
-    assert_eq!(Some(true), from_content(Content::Bool(true)).unwrap());
+    assert_eq!(
+        Some(()),
+        Deserializer::new(Content::Unit).deserialize().unwrap()
+    );
+    assert_eq!(
+        Some(true),
+        Deserializer::new(Content::Bool(true))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
 fn deserialize_unit() {
-    assert_eq!((), from_content(Content::Unit).unwrap());
+    Deserializer::new(Content::Unit)
+        .deserialize::<()>()
+        .unwrap();
     assert_eq!(
         Some(()),
-        from_content(Content::Option(Some(Box::new(Content::Unit)))).unwrap(),
+        Deserializer::new(Content::Option(Some(Box::new(Content::Unit))))
+            .deserialize()
+            .unwrap(),
     );
 }
 
@@ -210,10 +343,11 @@ fn deserialize_unit_struct() {
     struct Foo;
     assert_eq!(
         Foo,
-        from_content(Content::Struct(Box::new(Struct {
+        Deserializer::new(Content::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Unit
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -226,12 +360,13 @@ fn deserialize_unit_variant() {
     }
     assert_eq!(
         Foo::Bar,
-        from_content(Content::Enum(Box::new(Enum {
+        Deserializer::new(Content::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
             data: Data::Unit
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -242,12 +377,13 @@ fn deserialize_newtype_struct() {
     struct Foo(bool);
     assert_eq!(
         Foo(true),
-        from_content(Content::Struct(Box::new(Struct {
+        Deserializer::new(Content::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::NewType {
                 value: Content::Bool(true)
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -260,7 +396,7 @@ fn deserialize_newtype_variant() {
     }
     assert_eq!(
         Foo::Bar(true),
-        from_content(Content::Enum(Box::new(Enum {
+        Deserializer::new(Content::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
@@ -268,6 +404,7 @@ fn deserialize_newtype_variant() {
                 value: Content::Bool(true)
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -276,14 +413,17 @@ fn deserialize_newtype_variant() {
 fn deserialize_seq() {
     assert_eq!(
         Vec::<bool>::new(),
-        from_content::<Vec<_>>(Content::Seq(Vec::new())).unwrap()
+        Deserializer::new(Content::Seq(Vec::new()))
+            .deserialize::<Vec<_>>()
+            .unwrap()
     );
     assert_eq!(
         vec![true, false],
-        from_content::<Vec<_>>(Content::Seq(vec![
+        Deserializer::new(Content::Seq(vec![
             Content::Bool(true),
             Content::Bool(false)
         ]))
+        .deserialize::<Vec<_>>()
         .unwrap()
     );
 }
@@ -292,15 +432,18 @@ fn deserialize_seq() {
 fn deserialize_tuple() {
     assert_eq!(
         (true,),
-        from_content(Content::Tuple(vec![Content::Bool(true)])).unwrap()
+        Deserializer::new(Content::Tuple(vec![Content::Bool(true)]))
+            .deserialize()
+            .unwrap()
     );
     assert_eq!(
         (true, 'a', "foo"),
-        from_content(Content::Tuple(vec![
+        Deserializer::new(Content::Tuple(vec![
             Content::Bool(true),
             Content::Char('a'),
             Content::String(Cow::Borrowed("foo"))
         ]))
+        .deserialize()
         .unwrap()
     );
 }
@@ -311,12 +454,13 @@ fn deserialize_tuple_struct() {
     struct Foo(bool, char);
     assert_eq!(
         Foo(true, 'a'),
-        from_content(Content::Struct(Box::new(Struct {
+        Deserializer::new(Content::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Tuple {
                 values: vec![Content::Bool(true), Content::Char('a')],
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -329,7 +473,7 @@ fn deserialize_tuple_variant() {
     }
     assert_eq!(
         Foo::Bar(true, 'a'),
-        from_content(Content::Enum(Box::new(Enum {
+        Deserializer::new(Content::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
@@ -337,6 +481,7 @@ fn deserialize_tuple_variant() {
                 values: vec![Content::Bool(true), Content::Char('a')],
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -345,17 +490,20 @@ fn deserialize_tuple_variant() {
 fn deserialize_map() {
     assert_eq!(
         BTreeMap::<(), ()>::new(),
-        from_content(Content::Map(Vec::new())).unwrap()
+        Deserializer::new(Content::Map(Vec::new()))
+            .deserialize()
+            .unwrap()
     );
     let mut map = BTreeMap::new();
     map.insert('f', false);
     map.insert('t', true);
     assert_eq!(
         map,
-        from_content(Content::Map(vec![
+        Deserializer::new(Content::Map(vec![
             (Content::Char('f'), Content::Bool(false)),
             (Content::Char('t'), Content::Bool(true)),
         ]))
+        .deserialize()
         .unwrap()
     );
 }
@@ -372,12 +520,13 @@ fn deserialize_struct() {
             bar: true,
             baz: 'a'
         },
-        from_content(Content::Struct(Box::new(Struct {
+        Deserializer::new(Content::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Struct {
                 fields: vec![("bar", Content::Bool(true)), ("baz", Content::Char('a'))],
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }
@@ -393,7 +542,7 @@ fn deserialize_struct_variant() {
             bar: true,
             baz: 'a',
         },
-        from_content(Content::Enum(Box::new(Enum {
+        Deserializer::new(Content::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
@@ -401,6 +550,7 @@ fn deserialize_struct_variant() {
                 fields: vec![("bar", Content::Bool(true)), ("baz", Content::Char('a'))],
             }
         })))
+        .deserialize()
         .unwrap()
     );
 }

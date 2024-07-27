@@ -20,6 +20,8 @@ jobs:
 
       - run: cargo clippy --all-features -- -D warnings
 
+      - run: cargo clippy --tests
+
       - run: cargo check
 
       - run: cargo check --no-default-features

@@ -37,6 +37,7 @@ pub(super) struct Deserializer<'de> {
     expected: &'static str,
     enum_box: Box<Enum<'de>>,
     human_readable: bool,
+    coerce_numbers: bool,
 }
 
 impl<'de> Deserializer<'de> {
@@ -44,11 +45,13 @@ impl<'de> Deserializer<'de> {
         expected: &'static str,
         enum_box: Box<Enum<'de>>,
         human_readable: bool,
+        coerce_numbers: bool,
     ) -> Self {
         Self {
             expected,
             enum_box,
             human_readable,
+            coerce_numbers,
         }
     }
 }
@@ -88,6 +91,7 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
                 let deserializer = crate::Deserializer {
                     content: value,
                     human_readable: self.human_readable,
+                    coerce_numbers: self.coerce_numbers,
                 };
                 seed.deserialize(deserializer)
             }
@@ -103,7 +107,9 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         V: de::Visitor<'de>,
     {
         match self.enum_box.data {
-            Data::Tuple { values } => visitor.visit_seq(Seq::new(values, self.human_readable)),
+            Data::Tuple { values } => {
+                visitor.visit_seq(Seq::new(values, self.human_readable, self.coerce_numbers))
+            }
             _ => Err(self.enum_box.unexpected(Expected::Enum {
                 name: Some(self.expected.to_owned()),
                 typ: Some(DataType::Tuple),
@@ -120,7 +126,11 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         V: de::Visitor<'de>,
     {
         match self.enum_box.data {
-            Data::Struct { fields } => visitor.visit_map(Map::from((fields, self.human_readable))),
+            Data::Struct { fields } => visitor.visit_map(Map::from((
+                fields,
+                self.human_readable,
+                self.coerce_numbers,
+            ))),
             _ => Err(self.enum_box.unexpected(Expected::Enum {
                 name: Some(self.expected.to_owned()),
                 typ: Some(DataType::Struct),
@@ -156,6 +166,7 @@ pub(super) fn visit_enum<'de, V>(
     expected: &'static str,
     v: Box<Enum<'de>>,
     human_readable: bool,
+    coerce_numbers: bool,
     visitor: V,
 ) -> Result<V::Value, Error>
 where
@@ -167,7 +178,7 @@ where
     let typ = v.data.typ();
     let len = v.data.len();
     let fields = v.data.field_names();
-    let data = Deserializer::new(expected, v, human_readable);
+    let data = Deserializer::new(expected, v, human_readable, coerce_numbers);
     match typ {
         DataType::Unit => visitor.visit_unit_variant(name, variant_index, variant, data),
         DataType::NewType => visitor.visit_newtype_variant(name, variant_index, variant, data),

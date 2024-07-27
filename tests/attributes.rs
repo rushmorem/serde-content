@@ -1,11 +1,12 @@
 #![cfg(feature = "derive")]
+#![allow(clippy::disallowed_names)]
 
 use serde::Deserialize;
 use serde::Serialize;
-use serde_content::from_content;
-use serde_content::to_content;
 use serde_content::Content;
 use serde_content::Data;
+use serde_content::Deserializer;
+use serde_content::Serializer;
 use serde_content::Struct;
 
 #[test]
@@ -24,8 +25,8 @@ fn flatten() {
     let foo = Foo { bar: true };
     let baz = Baz { foo };
 
-    let content = to_content(&baz).unwrap();
-    assert_eq!(baz, from_content(content).unwrap());
+    let content = Serializer::new().serialize(&baz).unwrap();
+    assert_eq!(baz, Deserializer::new(content).deserialize().unwrap());
 }
 
 #[test]
@@ -39,7 +40,7 @@ fn skip() {
 
     let foo = Foo { bar: true, _baz: 9 };
 
-    let content = to_content(&foo).unwrap();
+    let content = Serializer::new().serialize(&foo).unwrap();
     let expected = Content::Struct(Box::new(Struct {
         name: "Foo",
         data: Data::Struct {
@@ -60,7 +61,8 @@ fn untagged() {
     let bar = 56;
     let foo = Foo::Bar(bar);
 
-    let content = to_content(&foo).unwrap();
-    assert_eq!(foo, from_content(content.clone()).unwrap());
-    assert_eq!(bar, from_content(content).unwrap());
+    let content = Serializer::new().serialize(&foo).unwrap();
+    let deserializer = Deserializer::new(content);
+    assert_eq!(foo, deserializer.clone().deserialize().unwrap());
+    assert_eq!(bar, deserializer.deserialize().unwrap());
 }

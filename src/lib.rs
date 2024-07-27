@@ -9,11 +9,13 @@ extern crate alloc;
 
 mod de;
 mod error;
+mod number;
 mod ser;
 mod tests;
 
 use alloc::borrow::Cow;
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 pub use error::Data as FoundData;
@@ -22,42 +24,9 @@ pub use error::ErrorKind;
 pub use error::Expected;
 pub use error::Found;
 pub use error::Result;
+pub use number::Number;
 #[cfg(feature = "serde")]
-pub use {de::from_content, de::Deserializer, de::Unexpected, ser::to_content, ser::Serializer};
-
-/// A containter for all Rust number types.
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[non_exhaustive] // In case Rust introduces new number types.
-pub enum Number {
-    /// Holds an 8-bit signed integer type.
-    I8(i8),
-    /// Holds an 8-bit unsigned integer type.
-    U8(u8),
-
-    /// Holds a 16-bit signed integer type.
-    I16(i16),
-    /// Holds a 16-bit unsigned integer type.
-    U16(u16),
-
-    /// Holds a 32-bit signed integer type.
-    I32(i32),
-    /// Holds a 32-bit unsigned integer type.
-    U32(u32),
-    /// Holds a 32-bit floating point type.
-    F32(f32),
-
-    /// Holds a 64-bit signed integer type.
-    I64(i64),
-    /// Holds a 64-bit unsigned integer type.
-    U64(u64),
-    /// Holds a 32-bit floating point type.
-    F64(f64),
-
-    /// Holds a 128-bit signed integer type.
-    I128(i128),
-    /// Holds a 128-bit unsigned integer type.
-    U128(u128),
-}
+pub use {de::Deserializer, de::Unexpected, ser::Serializer};
 
 /// Represents struct and enum data.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -221,5 +190,68 @@ impl Content<'_> {
             Content::Enum(v) => Content::Enum(Box::new(v.into_owned())),
             Content::Tuple(v) => Content::Tuple(v.into_iter().map(Self::into_owned).collect()),
         }
+    }
+}
+
+impl From<()> for Content<'static> {
+    fn from(_: ()) -> Self {
+        Self::Unit
+    }
+}
+
+impl From<bool> for Content<'static> {
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
+    }
+}
+
+impl<T> From<T> for Content<'static>
+where
+    T: Into<Number>,
+{
+    fn from(value: T) -> Self {
+        Self::Number(value.into())
+    }
+}
+
+impl From<char> for Content<'static> {
+    fn from(value: char) -> Self {
+        Self::Char(value)
+    }
+}
+
+impl<'a> From<&'a str> for Content<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::String(Cow::Borrowed(value))
+    }
+}
+
+impl<'a> From<&'a String> for Content<'a> {
+    fn from(value: &'a String) -> Self {
+        Self::String(Cow::Borrowed(value))
+    }
+}
+
+impl From<String> for Content<'static> {
+    fn from(value: String) -> Self {
+        Self::String(Cow::Owned(value))
+    }
+}
+
+impl<'a> From<&'a [u8]> for Content<'a> {
+    fn from(value: &'a [u8]) -> Self {
+        Self::Bytes(Cow::Borrowed(value))
+    }
+}
+
+impl<'a> From<&'a Vec<u8>> for Content<'a> {
+    fn from(value: &'a Vec<u8>) -> Self {
+        Self::Bytes(Cow::Borrowed(value))
+    }
+}
+
+impl From<Vec<u8>> for Content<'static> {
+    fn from(value: Vec<u8>) -> Self {
+        Self::Bytes(Cow::Owned(value))
     }
 }

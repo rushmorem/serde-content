@@ -8,199 +8,121 @@ use alloc::vec::Vec;
 use core::fmt;
 use serde::de::Visitor;
 use serde::Deserialize;
-use serde::Deserializer;
 use serde::Serialize;
-use serde_content::from_content;
-use serde_content::to_content;
+use serde_content::Deserializer;
+use serde_content::Serializer;
+
+fn roundtrip<T>(v: T)
+where
+    T: Serialize + Deserialize<'static> + fmt::Debug + PartialEq,
+{
+    let content = Serializer::new().serialize(&v).unwrap();
+    let deserializer = Deserializer::new(content.clone());
+    assert_eq!(v, deserializer.clone().deserialize().unwrap());
+    assert_eq!(content, deserializer.deserialize().unwrap());
+}
 
 #[test]
 fn roundtrip_bool() {
-    let v = true;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = false;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [true, false] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_i8() {
-    let v = 0i8;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1i8;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [i8::MIN, 0, i8::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_i16() {
-    let v = 0i16;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1i16;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [i16::MIN, 0, i16::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_i32() {
-    let v = 0i32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1i32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [i32::MIN, 0, i32::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_i64() {
-    let v = 0i64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1i64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [i64::MIN, 0, i64::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_i128() {
-    let v = 0i128;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1i128;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [i128::MIN, 0, i128::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_u8() {
-    let v = 0u8;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1u8;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [u8::MIN, u8::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_u16() {
-    let v = 0u16;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1u16;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [u16::MIN, u16::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_u32() {
-    let v = 0u32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1u32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [u32::MIN, u32::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_u64() {
-    let v = 0u64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1u64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [u64::MIN, u64::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_u128() {
-    let v = 0u128;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1u128;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [u128::MIN, u128::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_f32() {
-    let v = 0f32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1f32;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [f32::MIN, 0.0, f32::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_f64() {
-    let v = 0f64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = 1f64;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [f64::MIN, 0.0, f64::MAX] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_char() {
-    let v = 'a';
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip('a');
 }
 
 #[test]
 fn roundtrip_string() {
-    let v = "";
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content::<String>(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = "foo";
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content::<String>(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [String::new(), String::from("foo")] {
+        roundtrip(v);
+    }
 }
 
 #[test]
@@ -215,10 +137,10 @@ fn roundtrip_bytes() {
             serializer.serialize_bytes(&self.0)
         }
     }
-    impl<'de> Deserialize<'de> for Bytes {
+    impl<'de> serde::Deserialize<'de> for Bytes {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
-            D: Deserializer<'de>,
+            D: serde::Deserializer<'de>,
         {
             struct BytesVisitor;
             impl<'de> Visitor<'de> for BytesVisitor {
@@ -239,50 +161,29 @@ fn roundtrip_bytes() {
             deserializer.deserialize_byte_buf(BytesVisitor)
         }
     }
-    let v = Bytes("".as_bytes().to_vec());
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = Bytes("foo".as_bytes().to_vec());
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [Bytes(Vec::new()), Bytes("foo".as_bytes().to_vec())] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_option() {
-    let v = None::<&str>;
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = Some("foo".to_owned());
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [None, Some(String::new()), Some(String::from("foo"))] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_unit() {
-    let v = ();
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = Some(());
-    let content = to_content(v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(());
+    roundtrip(Some(()));
 }
 
 #[test]
 fn roundtrip_unit_struct() {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo;
-    let content = to_content(Foo).unwrap();
-    from_content::<Foo>(content.clone()).unwrap();
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo);
 }
 
 #[test]
@@ -291,20 +192,14 @@ fn roundtrip_unit_variant() {
     enum Foo {
         Bar,
     }
-    let v = Foo::Bar;
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo::Bar);
 }
 
 #[test]
 fn roundtrip_newtype_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo(bool);
-    let v = Foo(true);
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(dbg!(content.clone())).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo(true));
 }
 
 #[test]
@@ -313,46 +208,27 @@ fn roundtrip_newtype_variant() {
     enum Foo {
         Bar(bool),
     }
-    let v = Foo::Bar(true);
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo::Bar(true));
 }
 
 #[test]
 fn roundtrip_seq() {
-    let v = Vec::<bool>::new();
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content::<Vec<_>>(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = vec![true, false];
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content::<Vec<_>>(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    for v in [Vec::new(), vec![true, false]] {
+        roundtrip(v);
+    }
 }
 
 #[test]
 fn roundtrip_tuple() {
-    let v = (true,);
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let v = (true, 'a', "foo".to_owned());
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip((true,));
+    roundtrip((true, 'a', "foo".to_owned()));
 }
 
 #[test]
 fn roundtrip_tuple_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo(bool, char);
-    let v = Foo(true, 'a');
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo(true, 'a'));
 }
 
 #[test]
@@ -361,25 +237,17 @@ fn roundtrip_tuple_variant() {
     enum Foo {
         Bar(bool, char),
     }
-    let v = Foo::Bar(true, 'a');
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    roundtrip(Foo::Bar(true, 'a'));
 }
 
 #[test]
 fn roundtrip_map() {
-    let v = BTreeMap::<(), ()>::new();
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
-    //
-    let mut v = BTreeMap::new();
-    v.insert('f', false);
-    v.insert('t', true);
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    let mut map = BTreeMap::new();
+    map.insert('f', false);
+    map.insert('t', true);
+    for v in [BTreeMap::new(), map] {
+        roundtrip(v);
+    }
 }
 
 #[test]
@@ -389,13 +257,10 @@ fn roundtrip_struct() {
         bar: bool,
         baz: char,
     }
-    let v = Foo {
+    roundtrip(Foo {
         bar: true,
         baz: 'a',
-    };
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    });
 }
 
 #[test]
@@ -404,11 +269,8 @@ fn roundtrip_struct_variant() {
     enum Foo {
         Bar { bar: bool, baz: char },
     }
-    let v = Foo::Bar {
+    roundtrip(Foo::Bar {
         bar: true,
         baz: 'a',
-    };
-    let content = to_content(&v).unwrap();
-    assert_eq!(v, from_content(content.clone()).unwrap());
-    assert_eq!(content.clone(), from_content(content).unwrap());
+    });
 }
