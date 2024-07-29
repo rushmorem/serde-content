@@ -10,10 +10,10 @@ impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Number {
     type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        use crate::Content;
         use crate::Deserializer;
+        use crate::Value;
 
-        Deserializer::new(Content::Number(self))
+        Deserializer::new(Value::Number(self))
     }
 }
 

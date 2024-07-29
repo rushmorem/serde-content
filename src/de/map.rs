@@ -1,7 +1,7 @@
 use crate::de::identifier::Identifier;
-use crate::Content;
 use crate::Deserializer;
 use crate::Error;
+use crate::Value;
 use alloc::vec::IntoIter;
 use alloc::vec::Vec;
 use core::iter::Peekable;
@@ -10,18 +10,18 @@ use serde::de;
 
 pub(super) enum Key<'de> {
     Identifier(Identifier),
-    Content(Content<'de>),
+    Value(Value<'de>),
 }
 
 pub(super) struct Map<'de> {
-    iter: Peekable<IntoIter<(Key<'de>, Content<'de>)>>,
+    iter: Peekable<IntoIter<(Key<'de>, Value<'de>)>>,
     human_readable: bool,
     coerce_numbers: bool,
 }
 
 impl<'de> Map<'de> {
     pub(super) fn new(
-        vec: Vec<(Key<'de>, Content<'de>)>,
+        vec: Vec<(Key<'de>, Value<'de>)>,
         human_readable: bool,
         coerce_numbers: bool,
     ) -> Self {
@@ -41,10 +41,10 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
         T: de::DeserializeSeed<'de>,
     {
         match self.iter.peek_mut() {
-            Some((key, _)) => match mem::replace(key, Key::Content(Content::Unit)) {
-                Key::Content(content) => {
+            Some((key, _)) => match mem::replace(key, Key::Value(Value::Unit)) {
+                Key::Value(value) => {
                     let deserializer = Deserializer {
-                        content,
+                        value,
                         human_readable: self.human_readable,
                         coerce_numbers: self.coerce_numbers,
                     };
@@ -63,7 +63,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
         match self.iter.next() {
             Some((_, value)) => {
                 let deserializer = Deserializer {
-                    content: value,
+                    value,
                     human_readable: self.human_readable,
                     coerce_numbers: self.coerce_numbers,
                 };
@@ -86,9 +86,9 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
             Some((key, value)) => {
                 let key = match key {
                     Key::Identifier(identifier) => kseed.deserialize(identifier)?,
-                    Key::Content(content) => {
+                    Key::Value(value) => {
                         let deserializer = Deserializer {
-                            content,
+                            value,
                             human_readable: self.human_readable,
                             coerce_numbers: self.coerce_numbers,
                         };
@@ -96,7 +96,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                     }
                 };
                 let deserializer = Deserializer {
-                    content: value,
+                    value,
                     human_readable: self.human_readable,
                     coerce_numbers: self.coerce_numbers,
                 };
@@ -115,8 +115,8 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
     }
 }
 
-impl<'de> From<(Vec<(&'static str, Content<'de>)>, bool, bool)> for Map<'de> {
-    fn from(fields: (Vec<(&'static str, Content<'de>)>, bool, bool)) -> Self {
+impl<'de> From<(Vec<(&'static str, Value<'de>)>, bool, bool)> for Map<'de> {
+    fn from(fields: (Vec<(&'static str, Value<'de>)>, bool, bool)) -> Self {
         let mut vec = Vec::with_capacity(fields.0.len());
         for (index, (key, value)) in fields.0.into_iter().enumerate() {
             let key = Key::Identifier(Identifier::new(key, index as u64));
@@ -126,11 +126,11 @@ impl<'de> From<(Vec<(&'static str, Content<'de>)>, bool, bool)> for Map<'de> {
     }
 }
 
-impl<'de> From<(Vec<(Content<'de>, Content<'de>)>, bool, bool)> for Map<'de> {
-    fn from(fields: (Vec<(Content<'de>, Content<'de>)>, bool, bool)) -> Self {
+impl<'de> From<(Vec<(Value<'de>, Value<'de>)>, bool, bool)> for Map<'de> {
+    fn from(fields: (Vec<(Value<'de>, Value<'de>)>, bool, bool)) -> Self {
         let mut vec = Vec::with_capacity(fields.0.len());
         for (key, value) in fields.0 {
-            let key = Key::Content(key);
+            let key = Key::Value(key);
             vec.push((key, value));
         }
         Self::new(vec, fields.1, fields.2)

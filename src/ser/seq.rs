@@ -1,16 +1,16 @@
-use crate::ser::Content;
+use crate::ser::Value;
 use crate::Error;
 use crate::Serializer;
 use alloc::vec::Vec;
 use serde::ser;
 
 pub struct Seq {
-    vec: Vec<Content>,
+    vec: Vec<Value>,
     human_readable: bool,
 }
 
 impl Seq {
-    pub(super) const fn new(vec: Vec<Content>, human_readable: bool) -> Self {
+    pub(super) const fn new(vec: Vec<Value>, human_readable: bool) -> Self {
         Self {
             vec,
             human_readable,
@@ -19,7 +19,7 @@ impl Seq {
 }
 
 impl ser::SerializeSeq for Seq {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<(), Error>
@@ -34,6 +34,6 @@ impl ser::SerializeSeq for Seq {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Seq(self.vec))
+        Ok(Value::Seq(self.vec))
     }
 }

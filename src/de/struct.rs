@@ -7,11 +7,11 @@ impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Struct<'de> {
     type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        use crate::Content;
         use crate::Deserializer;
+        use crate::Value;
         use alloc::boxed::Box;
 
-        Deserializer::new(Content::Struct(Box::new(self)))
+        Deserializer::new(Value::Struct(Box::new(self)))
     }
 }
 

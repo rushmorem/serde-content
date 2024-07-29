@@ -1,4 +1,4 @@
-use crate::ser::Content;
+use crate::ser::Value;
 use crate::Data;
 use crate::Error;
 use crate::Serializer;
@@ -48,7 +48,7 @@ impl ser::Serialize for crate::Struct<'static> {
 }
 
 impl ser::SerializeStruct for Struct {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
@@ -65,12 +65,12 @@ impl ser::SerializeStruct for Struct {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Struct(Box::new(self.r#struct)))
+        Ok(Value::Struct(Box::new(self.r#struct)))
     }
 }
 
 impl ser::SerializeTupleStruct for Struct {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
@@ -87,6 +87,6 @@ impl ser::SerializeTupleStruct for Struct {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Struct(Box::new(self.r#struct)))
+        Ok(Value::Struct(Box::new(self.r#struct)))
     }
 }

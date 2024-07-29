@@ -1,16 +1,16 @@
-use crate::ser::Content;
+use crate::ser::Value;
 use crate::Error;
 use crate::Serializer;
 use alloc::vec::Vec;
 use serde::ser;
 
 pub struct Tuple {
-    vec: Vec<Content>,
+    vec: Vec<Value>,
     human_readable: bool,
 }
 
 impl Tuple {
-    pub(super) const fn new(vec: Vec<Content>, human_readable: bool) -> Self {
+    pub(super) const fn new(vec: Vec<Value>, human_readable: bool) -> Self {
         Self {
             vec,
             human_readable,
@@ -19,7 +19,7 @@ impl Tuple {
 }
 
 impl ser::SerializeTuple for Tuple {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_element<T>(&mut self, value: &T) -> Result<(), Error>
@@ -34,6 +34,6 @@ impl ser::SerializeTuple for Tuple {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Tuple(self.vec))
+        Ok(Value::Tuple(self.vec))
     }
 }

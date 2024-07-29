@@ -36,17 +36,17 @@ pub enum Data<'a> {
     /// Represents newtype structs and enum variants.
     NewType {
         /// The value of the newtype struct or enum variant.
-        value: Content<'a>,
+        value: Value<'a>,
     },
     /// Represents tuple structs and enum variants.
     Tuple {
         /// The values of the tuple struct or enum variant.
-        values: Vec<Content<'a>>,
+        values: Vec<Value<'a>>,
     },
     /// Represents object-like structs and enum variants.
     Struct {
         /// A vector of field names and their values.
-        fields: Vec<(&'static str, Content<'a>)>,
+        fields: Vec<(&'static str, Value<'a>)>,
     },
 }
 
@@ -59,7 +59,7 @@ impl Data<'_> {
                 value: value.into_owned(),
             },
             Data::Tuple { values } => Data::Tuple {
-                values: values.into_iter().map(Content::into_owned).collect(),
+                values: values.into_iter().map(Value::into_owned).collect(),
             },
             Data::Struct { fields } => Data::Struct {
                 fields: fields
@@ -139,7 +139,7 @@ impl Enum<'_> {
 
 /// Represents any valid Rust value.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Content<'a> {
+pub enum Value<'a> {
     /// Represents the Rust unit type, `()`.
     Unit,
     /// Represents a Rust boolean.
@@ -153,59 +153,59 @@ pub enum Content<'a> {
     /// Represents a Rust byte array.
     Bytes(Cow<'a, [u8]>),
     /// Represents an array of Rust values.
-    Seq(Vec<Content<'a>>),
+    Seq(Vec<Value<'a>>),
     /// Represents a map of Rust values.
-    Map(Vec<(Content<'a>, Content<'a>)>),
+    Map(Vec<(Value<'a>, Value<'a>)>),
     /// Represents optional Rust values.
-    Option(Option<Box<Content<'a>>>),
+    Option(Option<Box<Value<'a>>>),
     /// Represents a Rust struct.
     Struct(Box<Struct<'a>>),
     /// Represents a Rust enum.
     Enum(Box<Enum<'a>>),
     /// Represents a Rust tuple.
-    Tuple(Vec<Content<'a>>),
+    Tuple(Vec<Value<'a>>),
 }
 
-impl Content<'_> {
+impl Value<'_> {
     /// Moves data where possible or otherwise clones it into an owned object.
-    pub fn into_owned(self) -> Content<'static> {
+    pub fn into_owned(self) -> Value<'static> {
         match self {
-            Content::Unit => Content::Unit,
-            Content::Bool(v) => Content::Bool(v),
-            Content::Number(v) => Content::Number(v),
-            Content::Char(v) => Content::Char(v),
-            Content::String(v) => Content::String(Cow::Owned(v.into_owned())),
-            Content::Bytes(v) => Content::Bytes(Cow::Owned(v.into_owned())),
-            Content::Seq(v) => Content::Seq(v.into_iter().map(Self::into_owned).collect()),
-            Content::Map(v) => Content::Map(
+            Value::Unit => Value::Unit,
+            Value::Bool(v) => Value::Bool(v),
+            Value::Number(v) => Value::Number(v),
+            Value::Char(v) => Value::Char(v),
+            Value::String(v) => Value::String(Cow::Owned(v.into_owned())),
+            Value::Bytes(v) => Value::Bytes(Cow::Owned(v.into_owned())),
+            Value::Seq(v) => Value::Seq(v.into_iter().map(Self::into_owned).collect()),
+            Value::Map(v) => Value::Map(
                 v.into_iter()
                     .map(|(key, value)| (key.into_owned(), value.into_owned()))
                     .collect(),
             ),
-            Content::Option(v) => match v {
-                Some(v) => Content::Option(Some(Box::new(v.into_owned()))),
-                None => Content::Option(None),
+            Value::Option(v) => match v {
+                Some(v) => Value::Option(Some(Box::new(v.into_owned()))),
+                None => Value::Option(None),
             },
-            Content::Struct(v) => Content::Struct(Box::new(v.into_owned())),
-            Content::Enum(v) => Content::Enum(Box::new(v.into_owned())),
-            Content::Tuple(v) => Content::Tuple(v.into_iter().map(Self::into_owned).collect()),
+            Value::Struct(v) => Value::Struct(Box::new(v.into_owned())),
+            Value::Enum(v) => Value::Enum(Box::new(v.into_owned())),
+            Value::Tuple(v) => Value::Tuple(v.into_iter().map(Self::into_owned).collect()),
         }
     }
 }
 
-impl From<()> for Content<'static> {
+impl From<()> for Value<'static> {
     fn from(_: ()) -> Self {
         Self::Unit
     }
 }
 
-impl From<bool> for Content<'static> {
+impl From<bool> for Value<'static> {
     fn from(value: bool) -> Self {
         Self::Bool(value)
     }
 }
 
-impl<T> From<T> for Content<'static>
+impl<T> From<T> for Value<'static>
 where
     T: Into<Number>,
 {
@@ -214,43 +214,43 @@ where
     }
 }
 
-impl From<char> for Content<'static> {
+impl From<char> for Value<'static> {
     fn from(value: char) -> Self {
         Self::Char(value)
     }
 }
 
-impl<'a> From<&'a str> for Content<'a> {
+impl<'a> From<&'a str> for Value<'a> {
     fn from(value: &'a str) -> Self {
         Self::String(Cow::Borrowed(value))
     }
 }
 
-impl<'a> From<&'a String> for Content<'a> {
+impl<'a> From<&'a String> for Value<'a> {
     fn from(value: &'a String) -> Self {
         Self::String(Cow::Borrowed(value))
     }
 }
 
-impl From<String> for Content<'static> {
+impl From<String> for Value<'static> {
     fn from(value: String) -> Self {
         Self::String(Cow::Owned(value))
     }
 }
 
-impl<'a> From<&'a [u8]> for Content<'a> {
+impl<'a> From<&'a [u8]> for Value<'a> {
     fn from(value: &'a [u8]) -> Self {
         Self::Bytes(Cow::Borrowed(value))
     }
 }
 
-impl<'a> From<&'a Vec<u8>> for Content<'a> {
+impl<'a> From<&'a Vec<u8>> for Value<'a> {
     fn from(value: &'a Vec<u8>) -> Self {
         Self::Bytes(Cow::Borrowed(value))
     }
 }
 
-impl From<Vec<u8>> for Content<'static> {
+impl From<Vec<u8>> for Value<'static> {
     fn from(value: Vec<u8>) -> Self {
         Self::Bytes(Cow::Owned(value))
     }

@@ -1,16 +1,16 @@
-use crate::ser::Content;
+use crate::ser::Value;
 use crate::Error;
 use crate::Serializer;
 use alloc::vec::Vec;
 use serde::ser;
 
 pub struct Map {
-    vec: Vec<(Content, Content)>,
+    vec: Vec<(Value, Value)>,
     human_readable: bool,
 }
 
 impl Map {
-    pub(super) const fn new(vec: Vec<(Content, Content)>, human_readable: bool) -> Self {
+    pub(super) const fn new(vec: Vec<(Value, Value)>, human_readable: bool) -> Self {
         Self {
             vec,
             human_readable,
@@ -19,7 +19,7 @@ impl Map {
 }
 
 impl ser::SerializeMap for Map {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_key<T>(&mut self, key: &T) -> Result<(), Error>
@@ -29,7 +29,7 @@ impl ser::SerializeMap for Map {
         let key = key.serialize(Serializer {
             human_readable: self.human_readable,
         })?;
-        self.vec.push((key, Content::Unit));
+        self.vec.push((key, Value::Unit));
         Ok(())
     }
 
@@ -60,6 +60,6 @@ impl ser::SerializeMap for Map {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Map(self.vec))
+        Ok(Value::Map(self.vec))
     }
 }

@@ -14,12 +14,12 @@ fn string() {
     //
     let serializer = Serializer::new();
     let foo = Foo(String::new());
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
     //
     let foo = Foo("bar".to_owned());
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
@@ -31,12 +31,12 @@ fn newtype_struct() {
     //
     let serializer = Serializer::new();
     let foo = Foo(Bar(String::new()));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
     //
     let foo = Foo(Bar("bar".to_owned()));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
@@ -48,12 +48,12 @@ fn tuple_struct() {
     //
     let serializer = Serializer::new();
     let foo = Foo(Bar(String::new(), 0));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
     //
     let foo = Foo(Bar("bar".to_owned(), 56));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
@@ -71,15 +71,15 @@ fn object_struct() {
         foo: String::new(),
         baz: 0,
     });
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
     //
     let foo = Foo(Bar {
         foo: "bar".to_owned(),
         baz: 56,
     });
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
@@ -93,10 +93,10 @@ fn newtype_enum() {
     //
     let serializer = Serializer::new();
     let foo = Foo(Bar::Baz(String::new()));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
     //
     let foo = Foo(Bar::Baz("bar".to_owned()));
-    let content = serializer.serialize(&foo.0).unwrap();
-    assert_eq!(foo, Deserializer::new(content).deserialize().unwrap());
+    let value = serializer.serialize(&foo.0).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
