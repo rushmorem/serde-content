@@ -8,12 +8,14 @@ use serde::de;
 pub(super) struct Seq<'de> {
     iter: IntoIter<Content<'de>>,
     human_readable: bool,
+    coerce_numbers: bool,
 }
 
 impl<'de> Seq<'de> {
-    pub(super) fn new(vec: Vec<Content<'de>>, human_readable: bool) -> Self {
+    pub(super) fn new(vec: Vec<Content<'de>>, human_readable: bool, coerce_numbers: bool) -> Self {
         Self {
             human_readable,
+            coerce_numbers,
             iter: vec.into_iter(),
         }
     }
@@ -31,6 +33,7 @@ impl<'de> de::SeqAccess<'de> for Seq<'de> {
                 let deserializer = Deserializer {
                     content: value,
                     human_readable: self.human_readable,
+                    coerce_numbers: self.coerce_numbers,
                 };
                 seed.deserialize(deserializer).map(Some)
             }

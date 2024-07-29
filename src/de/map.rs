@@ -16,12 +16,18 @@ pub(super) enum Key<'de> {
 pub(super) struct Map<'de> {
     iter: Peekable<IntoIter<(Key<'de>, Content<'de>)>>,
     human_readable: bool,
+    coerce_numbers: bool,
 }
 
 impl<'de> Map<'de> {
-    pub(super) fn new(vec: Vec<(Key<'de>, Content<'de>)>, human_readable: bool) -> Self {
+    pub(super) fn new(
+        vec: Vec<(Key<'de>, Content<'de>)>,
+        human_readable: bool,
+        coerce_numbers: bool,
+    ) -> Self {
         Self {
             human_readable,
+            coerce_numbers,
             iter: vec.into_iter().peekable(),
         }
     }
@@ -40,6 +46,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                     let deserializer = Deserializer {
                         content,
                         human_readable: self.human_readable,
+                        coerce_numbers: self.coerce_numbers,
                     };
                     seed.deserialize(deserializer).map(Some)
                 }
@@ -58,6 +65,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                 let deserializer = Deserializer {
                     content: value,
                     human_readable: self.human_readable,
+                    coerce_numbers: self.coerce_numbers,
                 };
                 seed.deserialize(deserializer)
             }
@@ -82,6 +90,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                         let deserializer = Deserializer {
                             content,
                             human_readable: self.human_readable,
+                            coerce_numbers: self.coerce_numbers,
                         };
                         kseed.deserialize(deserializer)?
                     }
@@ -89,6 +98,7 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
                 let deserializer = Deserializer {
                     content: value,
                     human_readable: self.human_readable,
+                    coerce_numbers: self.coerce_numbers,
                 };
                 let value = vseed.deserialize(deserializer)?;
                 Ok(Some((key, value)))
@@ -105,24 +115,24 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
     }
 }
 
-impl<'de> From<(Vec<(&'static str, Content<'de>)>, bool)> for Map<'de> {
-    fn from(fields: (Vec<(&'static str, Content<'de>)>, bool)) -> Self {
+impl<'de> From<(Vec<(&'static str, Content<'de>)>, bool, bool)> for Map<'de> {
+    fn from(fields: (Vec<(&'static str, Content<'de>)>, bool, bool)) -> Self {
         let mut vec = Vec::with_capacity(fields.0.len());
         for (index, (key, value)) in fields.0.into_iter().enumerate() {
             let key = Key::Identifier(Identifier::new(key, index as u64));
             vec.push((key, value));
         }
-        Self::new(vec, fields.1)
+        Self::new(vec, fields.1, fields.2)
     }
 }
 
-impl<'de> From<(Vec<(Content<'de>, Content<'de>)>, bool)> for Map<'de> {
-    fn from(fields: (Vec<(Content<'de>, Content<'de>)>, bool)) -> Self {
+impl<'de> From<(Vec<(Content<'de>, Content<'de>)>, bool, bool)> for Map<'de> {
+    fn from(fields: (Vec<(Content<'de>, Content<'de>)>, bool, bool)) -> Self {
         let mut vec = Vec::with_capacity(fields.0.len());
         for (key, value) in fields.0 {
             let key = Key::Content(key);
             vec.push((key, value));
         }
-        Self::new(vec, fields.1)
+        Self::new(vec, fields.1, fields.2)
     }
 }

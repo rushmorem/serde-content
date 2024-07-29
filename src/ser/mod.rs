@@ -29,14 +29,6 @@ use tuple::Tuple;
 
 type Content = super::Content<'static>;
 
-/// Convert a `T` into `Content` which is an enum that can represent any valid Rust data.
-pub fn to_content<T>(value: T) -> Result<Content, Error>
-where
-    T: ser::Serialize,
-{
-    value.serialize(Serializer::new())
-}
-
 /// A structure for serialising Rust values into [crate::Content].
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
 pub struct Serializer {
@@ -58,6 +50,14 @@ impl Serializer {
     pub const fn human_readable(mut self) -> Self {
         self.human_readable = true;
         self
+    }
+
+    /// Convert a `T` into `Content` which is an enum that can represent any valid Rust data.
+    pub fn serialize<T>(self, value: T) -> Result<Content, Error>
+    where
+        T: ser::Serialize,
+    {
+        value.serialize(self)
     }
 }
 

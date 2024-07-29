@@ -7,12 +7,13 @@ The model is stable and [well documented](https://serde.rs/data-model.html).
 
 This crate offers a unified design for both serialising and deserialising data.
 The goal is to offer a stable interface with roundtrip guarantees when
-serialising to and deserialising from `Content` using `to_content` and `from_content`.
+serialising to and deserialising from `Content` using our `Serializer` and `Deserializer`.
 
 ## Example
 
 ```rust
 use serde::{Deserialize, Serialize};
+use serde_content::{Deserializer, Serializer};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Point {
@@ -24,13 +25,13 @@ fn main() {
     let point = Point { x: 1, y: 2 };
 
     // Convert the Point to the Content type.
-    let serialized = serde_content::to_content(&point).unwrap();
+    let serialized = Serializer::new().serialize(&point).unwrap();
 
     // Pretty print the serialised Content.
     dbg!(&serialized);
 
     // Convert the Content back to a Point.
-    let deserialized: Point = serde_content::from_content(serialized).unwrap();
+    let deserialized: Point = Deserializer::new(serialized).deserialize().unwrap();
 
     // Pretty print the deserialised Point.
     dbg!(deserialized);

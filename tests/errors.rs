@@ -8,349 +8,295 @@ use alloc::vec::Vec;
 use core::fmt;
 use serde::de::Visitor;
 use serde::Deserialize;
-use serde::Deserializer;
 use serde::Serialize;
-use serde_content::from_content;
-use serde_content::to_content;
 use serde_content::DataType;
+use serde_content::Deserializer;
 use serde_content::Error;
 use serde_content::Expected;
 use serde_content::Found;
 use serde_content::FoundData;
 use serde_content::Number;
+use serde_content::Serializer;
 
-fn error_message(message: &str) -> String {
-    format!("failed to deserialise; {message}")
+fn check_error<T>(value: impl Serialize, found: Found, expected: Expected, message: &str)
+where
+    T: Deserialize<'static> + fmt::Debug,
+{
+    let content = Serializer::new().serialize(value).unwrap();
+    let error = Deserializer::new(content).deserialize::<T>().unwrap_err();
+    let expected = Error::unexpected(found, expected);
+    assert_eq!(error, expected);
+    assert_eq!(
+        error.to_string(),
+        format!("failed to deserialise; {message}"),
+    );
 }
 
 #[test]
 fn bool_errors() {
-    let v = true;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Bool(v), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found true")
+    check_error::<()>(
+        true,
+        Found::Bool(true),
+        Expected::Unit,
+        "expected a unit, found true",
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<bool>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Bool);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a boolean, found ()")
+    check_error::<bool>(
+        (),
+        Found::Unit,
+        Expected::Bool,
+        "expected a boolean, found ()",
     );
 }
 
 #[test]
 fn i8_errors() {
-    let v = 1i8;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::I8(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1i8")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<i8>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::I8);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an 8-bit signed integer, found ()")
-    );
+    for v in [i8::MIN, 0, i8::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::I8(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}i8"),
+        );
+        check_error::<i8>(
+            (),
+            Found::Unit,
+            Expected::I8,
+            "expected an 8-bit signed integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn i16_errors() {
-    let v = 1i16;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::I16(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1i16")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<i16>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::I16);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 16-bit signed integer, found ()")
-    );
+    for v in [i16::MIN, 0, i16::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::I16(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}i16"),
+        );
+        check_error::<i16>(
+            (),
+            Found::Unit,
+            Expected::I16,
+            "expected a 16-bit signed integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn i32_errors() {
-    let v = 1i32;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::I32(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1i32")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<i32>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::I32);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 32-bit signed integer, found ()")
-    );
+    for v in [i32::MIN, 0, i32::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::I32(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}i32"),
+        );
+        check_error::<i32>(
+            (),
+            Found::Unit,
+            Expected::I32,
+            "expected a 32-bit signed integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn i64_errors() {
-    let v = 1i64;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::I64(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1i64")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<i64>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::I64);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 64-bit signed integer, found ()")
-    );
+    for v in [i64::MIN, 0, i64::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::I64(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}i64"),
+        );
+        check_error::<i64>(
+            (),
+            Found::Unit,
+            Expected::I64,
+            "expected a 64-bit signed integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn i128_errors() {
-    let v = 1i128;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::I128(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1i128")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<i128>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::I128);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 128-bit signed integer, found ()")
-    );
+    for v in [i128::MIN, 0, i128::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::I128(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}i128"),
+        );
+        check_error::<i128>(
+            (),
+            Found::Unit,
+            Expected::I128,
+            "expected a 128-bit signed integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn u8_errors() {
-    let v = 1u8;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::U8(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1u8")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<u8>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::U8);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an 8-bit unsigned integer, found ()")
-    );
+    for v in [u8::MIN, u8::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::U8(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}u8"),
+        );
+        check_error::<u8>(
+            (),
+            Found::Unit,
+            Expected::U8,
+            "expected an 8-bit unsigned integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn u16_errors() {
-    let v = 1u16;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::U16(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1u16")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<u16>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::U16);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 16-bit unsigned integer, found ()")
-    );
+    for v in [u16::MIN, u16::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::U16(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}u16"),
+        );
+        check_error::<u16>(
+            (),
+            Found::Unit,
+            Expected::U16,
+            "expected a 16-bit unsigned integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn u32_errors() {
-    let v = 1u32;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::U32(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1u32")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<u32>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::U32);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 32-bit unsigned integer, found ()")
-    );
+    for v in [u32::MIN, u32::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::U32(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}u32"),
+        );
+        check_error::<u32>(
+            (),
+            Found::Unit,
+            Expected::U32,
+            "expected a 32-bit unsigned integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn u64_errors() {
-    let v = 1u64;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::U64(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1u64")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<u64>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::U64);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 64-bit unsigned integer, found ()")
-    );
+    for v in [u64::MIN, u64::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::U64(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}u64"),
+        );
+        check_error::<u64>(
+            (),
+            Found::Unit,
+            Expected::U64,
+            "expected a 64-bit unsigned integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn u128_errors() {
-    let v = 1u128;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::U128(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1u128")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<u128>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::U128);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 128-bit unsigned integer, found ()")
-    );
+    for v in [u128::MIN, u128::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::U128(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}u128"),
+        );
+        check_error::<u128>(
+            (),
+            Found::Unit,
+            Expected::U128,
+            "expected a 128-bit unsigned integer, found ()",
+        );
+    }
 }
 
 #[test]
 fn f32_errors() {
-    let v = 1f32;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::F32(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1f32")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<f32>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::F32);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 32-bit floating point, found ()")
-    );
+    for v in [f32::MIN, 0.0, f32::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::F32(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}f32"),
+        );
+        check_error::<f32>(
+            (),
+            Found::Unit,
+            Expected::F32,
+            "expected a 32-bit floating point, found ()",
+        );
+    }
 }
 
 #[test]
 fn f64_errors() {
-    let v = 1f64;
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Number(Number::F64(v)), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 1f64")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<f64>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::F64);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a 64-bit floating point, found ()")
-    );
+    for v in [f64::MIN, 0.0, f64::MAX] {
+        check_error::<()>(
+            v,
+            Found::Number(Number::F64(v)),
+            Expected::Unit,
+            &format!("expected a unit, found {v}f64"),
+        );
+        check_error::<f64>(
+            (),
+            Found::Unit,
+            Expected::F64,
+            "expected a 64-bit floating point, found ()",
+        );
+    }
 }
 
 #[test]
 fn char_errors() {
     let v = 'a';
-    let content = to_content(v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Char(v), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found 'a'")
+    check_error::<()>(
+        v,
+        Found::Char(v),
+        Expected::Unit,
+        &format!("expected a unit, found '{v}'"),
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<char>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Char);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a single character, found ()")
+    check_error::<char>(
+        (),
+        Found::Unit,
+        Expected::Char,
+        "expected a single character, found ()",
     );
 }
 
 #[test]
 fn string_errors() {
-    let v = "foo".to_owned();
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::String(v), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message(r#"expected a unit, found "foo""#)
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<&str>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::String);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a string, found ()")
-    );
+    for v in [String::new(), "foo".to_owned()] {
+        check_error::<()>(
+            v.clone(),
+            Found::String(v.clone()),
+            Expected::Unit,
+            &format!("expected a unit, found {v:?}"),
+        );
+        check_error::<String>(
+            (),
+            Found::Unit,
+            Expected::String,
+            "expected a string, found ()",
+        );
+    }
 }
 
 #[test]
@@ -368,7 +314,7 @@ fn bytes_errors() {
     impl<'de> Deserialize<'de> for Bytes {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
-            D: Deserializer<'de>,
+            D: serde::Deserializer<'de>,
         {
             struct BytesVisitor;
             impl<'de> Visitor<'de> for BytesVisitor {
@@ -390,56 +336,40 @@ fn bytes_errors() {
         }
     }
     let v = Bytes("foo".as_bytes().to_vec());
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Bytes(v.0), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found &[102, 111, 111]")
+    check_error::<()>(
+        v.clone(),
+        Found::Bytes(v.0),
+        Expected::Unit,
+        "expected a unit, found &[102, 111, 111]",
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<&[u8]>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Bytes);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a byte array, found ()")
+    check_error::<&[u8]>(
+        (),
+        Found::Unit,
+        Expected::Bytes,
+        "expected a byte array, found ()",
     );
 }
 
 #[test]
 fn option_errors() {
-    let content = to_content(None::<&str>).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Option(None), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found None")
-    );
-    //
-    let v = "foo".to_owned();
-    let content = to_content(Some(&v)).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
-        Found::Option(Some(Box::new(Found::String(v.into())))),
+    check_error::<()>(
+        None::<&str>,
+        Found::Option(None),
         Expected::Unit,
+        "expected a unit, found None",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message(r#"expected a unit, found Some("foo")"#)
+    let v = "foo".to_owned();
+    check_error::<()>(
+        Some(v.clone()),
+        Found::Option(Some(Box::new(Found::String(v)))),
+        Expected::Unit,
+        r#"expected a unit, found Some("foo")"#,
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Option<&str>>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::String);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a string, found ()")
+    check_error::<Option<&str>>(
+        (),
+        Found::Unit,
+        Expected::String,
+        "expected a string, found ()",
     );
 }
 
@@ -447,34 +377,23 @@ fn option_errors() {
 fn unit_struct_errors() {
     #[derive(Debug, Serialize, Deserialize)]
     struct Foo;
-    let content = to_content(Foo).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo,
         Found::Struct {
             name: "Foo".to_owned(),
             data: Box::new(FoundData::Unit),
         },
         Expected::Unit,
+        "expected a unit, found Foo",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Struct {
             name: Some("Foo".to_owned()),
             typ: Some(DataType::Unit),
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit struct named Foo, found ()")
+        "expected a unit struct named Foo, found ()",
     );
 }
 
@@ -484,36 +403,24 @@ fn unit_variant_errors() {
     enum Foo {
         Bar,
     }
-    let v = Foo::Bar;
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo::Bar,
         Found::Enum {
             name: "Foo".to_owned(),
             variant: "Bar".to_owned(),
             data: Box::new(FoundData::Unit),
         },
         Expected::Unit,
+        "expected a unit, found Foo::Bar",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo::Bar")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Enum {
             name: Some("Foo".to_owned()),
             typ: None,
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an enum variant of Foo, found ()")
+        "expected an enum variant of Foo, found ()",
     );
 }
 
@@ -522,28 +429,20 @@ fn newtype_struct_errors() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo(bool);
     let v = true;
-    let content = to_content(Foo(v)).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo(v),
         Found::Struct {
             name: "Foo".to_owned(),
             data: Box::new(FoundData::NewType(Found::Bool(v))),
         },
         Expected::Unit,
+        "expected a unit, found Foo(true)",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo(true)")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Bool);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a boolean, found ()")
+    check_error::<Foo>(
+        (),
+        Found::Unit,
+        Expected::Bool,
+        "expected a boolean, found ()",
     );
 }
 
@@ -554,87 +453,63 @@ fn newtype_variant_errors() {
         Bar(bool),
     }
     let v = true;
-    let content = to_content(Foo::Bar(v)).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo::Bar(v),
         Found::Enum {
             name: "Foo".to_owned(),
             variant: "Bar".to_owned(),
             data: Box::new(FoundData::NewType(Found::Bool(v))),
         },
         Expected::Unit,
+        "expected a unit, found Foo::Bar(true)",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo::Bar(true)")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(dbg!(content)).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Enum {
             name: Some("Foo".to_owned()),
             typ: None,
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an enum variant of Foo, found ()")
+        "expected an enum variant of Foo, found ()",
     );
 }
 
 #[test]
 fn seq_errors() {
     let v = vec![true, false];
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        v.clone(),
         Found::Seq(v.into_iter().map(Found::Bool).collect()),
         Expected::Unit,
+        "expected a unit, found [true, false]",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found [true, false]")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Vec<bool>>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Seq);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a sequence, found ()")
+    check_error::<Vec<bool>>(
+        (),
+        Found::Unit,
+        Expected::Seq,
+        "expected a sequence, found ()",
     );
 }
 
 #[test]
 fn tuple_errors() {
     let v = (true, 'a', "foo".to_owned());
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
     let tup = vec![
         Found::Bool(v.0),
         Found::Char(v.1),
-        Found::String(v.2.into()),
+        Found::String(v.2.clone()),
     ];
-    let expected = Error::unexpected(Found::Tuple(tup), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message(r#"expected a unit, found (true, 'a', "foo")"#)
+    check_error::<()>(
+        v.clone(),
+        Found::Tuple(tup),
+        Expected::Unit,
+        r#"expected a unit, found (true, 'a', "foo")"#,
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<(bool, usize)>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Tuple(2));
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a tuple with 2 elements, found ()")
+    check_error::<(bool, usize)>(
+        (),
+        Found::Unit,
+        Expected::Tuple(2),
+        "expected a tuple with 2 elements, found ()",
     );
 }
 
@@ -642,35 +517,23 @@ fn tuple_errors() {
 fn tuple_struct_errors() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo(bool, char);
-    let v = Foo(true, 'a');
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo(true, 'a'),
         Found::Struct {
             name: "Foo".to_owned(),
             data: Box::new(FoundData::Tuple(vec![Found::Bool(true), Found::Char('a')])),
         },
         Expected::Unit,
+        "expected a unit, found Foo(true, 'a')",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo(true, 'a')")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Struct {
             name: Some("Foo".to_owned()),
             typ: Some(DataType::Tuple),
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a tuple struct named Foo, found ()")
+        "expected a tuple struct named Foo, found ()",
     );
 }
 
@@ -680,36 +543,24 @@ fn tuple_variant_errors() {
     enum Foo {
         Bar(bool, char),
     }
-    let v = Foo::Bar(true, 'a');
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        Foo::Bar(true, 'a'),
         Found::Enum {
             name: "Foo".to_owned(),
             variant: "Bar".to_owned(),
             data: Box::new(FoundData::Tuple(vec![Found::Bool(true), Found::Char('a')])),
         },
         Expected::Unit,
+        "expected a unit, found Foo::Bar(true, 'a')",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo::Bar(true, 'a')")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Enum {
             name: Some("Foo".to_owned()),
             typ: None,
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an enum variant of Foo, found ()")
+        "expected an enum variant of Foo, found ()",
     );
 }
 
@@ -718,24 +569,23 @@ fn map_errors() {
     let mut v = BTreeMap::new();
     v.insert('f', false);
     v.insert('t', true);
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
     let map = v
+        .clone()
         .into_iter()
         .map(|(k, v)| (Found::Char(k), Found::Bool(v)))
         .collect();
-    let expected = Error::unexpected(Found::Map(map), Expected::Unit);
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found { 'f': false, 't': true }")
+    check_error::<()>(
+        v,
+        Found::Map(map),
+        Expected::Unit,
+        "expected a unit, found { 'f': false, 't': true }",
     );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<BTreeMap<String, bool>>(content).unwrap_err();
-    let expected = Error::unexpected(Found::Unit, Expected::Map);
-    assert_eq!(error, expected);
-    assert_eq!(error.to_string(), error_message("expected a map, found ()"));
+    check_error::<BTreeMap<String, bool>>(
+        (),
+        Found::Unit,
+        Expected::Map,
+        "expected a map, found ()",
+    );
 }
 
 #[test]
@@ -749,9 +599,8 @@ fn struct_errors() {
         bar: true,
         baz: 'a',
     };
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        v,
         Found::Struct {
             name: "Foo".to_owned(),
             data: Box::new(FoundData::Struct(vec![
@@ -760,26 +609,16 @@ fn struct_errors() {
             ])),
         },
         Expected::Unit,
+        "expected a unit, found Foo { bar: true, baz: 'a' }",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo { bar: true, baz: 'a' }")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Struct {
             name: Some("Foo".to_owned()),
             typ: Some(DataType::Struct),
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an object-like struct named Foo, found ()")
+        "expected an object-like struct named Foo, found ()",
     );
 }
 
@@ -793,9 +632,8 @@ fn struct_variant_errors() {
         bar: true,
         baz: 'a',
     };
-    let content = to_content(&v).unwrap();
-    let error = from_content::<()>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<()>(
+        v,
         Found::Enum {
             name: "Foo".to_owned(),
             variant: "Bar".to_owned(),
@@ -805,25 +643,15 @@ fn struct_variant_errors() {
             ])),
         },
         Expected::Unit,
+        "expected a unit, found Foo::Bar { bar: true, baz: 'a' }",
     );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected a unit, found Foo::Bar { bar: true, baz: 'a' }")
-    );
-    //
-    let content = to_content(()).unwrap();
-    let error = from_content::<Foo>(content).unwrap_err();
-    let expected = Error::unexpected(
+    check_error::<Foo>(
+        (),
         Found::Unit,
         Expected::Enum {
             name: Some("Foo".to_owned()),
             typ: None,
         },
-    );
-    assert_eq!(error, expected);
-    assert_eq!(
-        error.to_string(),
-        error_message("expected an enum variant of Foo, found ()")
+        "expected an enum variant of Foo, found ()",
     );
 }
