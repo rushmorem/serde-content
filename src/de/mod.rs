@@ -393,6 +393,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     typ: Some(DataType::Unit),
                 })),
             },
+            Value::Unit => self.deserialize_unit(visitor),
             _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Unit),
@@ -443,6 +444,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
             Value::Tuple(v) => {
                 visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
+            Value::Seq(_) => self.deserialize_seq(visitor),
             _ => Err(self.value.unexpected(Expected::Tuple(len))),
         }
     }
@@ -467,6 +469,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     typ: Some(DataType::Tuple),
                 })),
             },
+            Value::Seq(_) => self.deserialize_seq(visitor),
             _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Tuple),
@@ -508,6 +511,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     typ: Some(DataType::Struct),
                 })),
             },
+            Value::Map(_) => self.deserialize_map(visitor),
             _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Struct),
@@ -527,6 +531,23 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         match self.value {
             Value::Enum(v) => {
                 r#enum::visit_enum(name, v, self.human_readable, self.coerce_numbers, visitor)
+            }
+            Value::String(string) => visitor.visit_enum(r#enum::Access {
+                expected: name,
+                name: Value::String(string),
+                data: None,
+                human_readable: self.human_readable,
+                coerce_numbers: self.coerce_numbers,
+            }),
+            Value::Map(mut map) if map.len() == 1 => {
+                let (variant, data) = map.pop().unwrap();
+                visitor.visit_enum(r#enum::Access {
+                    expected: name,
+                    name: variant,
+                    data: Some(data),
+                    human_readable: self.human_readable,
+                    coerce_numbers: self.coerce_numbers,
+                })
             }
             _ => Err(self.value.unexpected(Expected::Enum {
                 name: Some(name.to_owned()),
