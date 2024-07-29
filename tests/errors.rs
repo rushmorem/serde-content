@@ -386,15 +386,6 @@ fn unit_struct_errors() {
         Expected::Unit,
         "expected a unit, found Foo",
     );
-    check_error::<Foo>(
-        (),
-        Found::Unit,
-        Expected::Struct {
-            name: Some("Foo".to_owned()),
-            typ: Some(DataType::Unit),
-        },
-        "expected a unit struct named Foo, found ()",
-    );
 }
 
 #[test]

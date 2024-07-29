@@ -346,6 +346,7 @@ fn deserialize_unit_struct() {
         .deserialize()
         .unwrap()
     );
+    assert_eq!(Foo, Deserializer::new(Value::Unit).deserialize().unwrap());
 }
 
 #[test]
@@ -365,6 +366,12 @@ fn deserialize_unit_variant() {
         .deserialize()
         .unwrap()
     );
+    assert_eq!(
+        Foo::Bar,
+        Deserializer::new(Value::String(Cow::Borrowed("Bar")))
+            .deserialize()
+            .unwrap()
+    );
 }
 
 #[test]
@@ -381,6 +388,10 @@ fn deserialize_newtype_struct() {
         })))
         .deserialize()
         .unwrap()
+    );
+    assert_eq!(
+        Foo(true),
+        Deserializer::new(Value::Bool(true)).deserialize().unwrap()
     );
 }
 
@@ -400,6 +411,15 @@ fn deserialize_newtype_variant() {
                 value: Value::Bool(true)
             }
         })))
+        .deserialize()
+        .unwrap()
+    );
+    assert_eq!(
+        Foo::Bar(true),
+        Deserializer::new(Value::Map(vec![(
+            Value::String(Cow::Borrowed("Bar")),
+            Value::Bool(true)
+        )]))
         .deserialize()
         .unwrap()
     );
@@ -439,6 +459,16 @@ fn deserialize_tuple() {
         .deserialize()
         .unwrap()
     );
+    assert_eq!(
+        (true, 'a', "foo"),
+        Deserializer::new(Value::Seq(vec![
+            Value::Bool(true),
+            Value::Char('a'),
+            Value::String(Cow::Borrowed("foo"))
+        ]))
+        .deserialize()
+        .unwrap()
+    );
 }
 
 #[test]
@@ -455,6 +485,12 @@ fn deserialize_tuple_struct() {
         })))
         .deserialize()
         .unwrap()
+    );
+    assert_eq!(
+        Foo(true, 'a'),
+        Deserializer::new(Value::Seq(vec![Value::Bool(true), Value::Char('a')]))
+            .deserialize()
+            .unwrap()
     );
 }
 
@@ -474,6 +510,15 @@ fn deserialize_tuple_variant() {
                 values: vec![Value::Bool(true), Value::Char('a')],
             }
         })))
+        .deserialize()
+        .unwrap()
+    );
+    assert_eq!(
+        Foo::Bar(true, 'a'),
+        Deserializer::new(Value::Map(vec![(
+            Value::String(Cow::Borrowed("Bar")),
+            Value::Seq(vec![Value::Bool(true), Value::Char('a')])
+        )]))
         .deserialize()
         .unwrap()
     );
@@ -522,6 +567,18 @@ fn deserialize_struct() {
         .deserialize()
         .unwrap()
     );
+    assert_eq!(
+        Foo {
+            bar: true,
+            baz: 'a'
+        },
+        Deserializer::new(Value::Map(vec![
+            (Value::String(Cow::Borrowed("bar")), Value::Bool(true)),
+            (Value::String(Cow::Borrowed("baz")), Value::Char('a'))
+        ]))
+        .deserialize()
+        .unwrap()
+    );
 }
 
 #[test]
@@ -543,6 +600,21 @@ fn deserialize_struct_variant() {
                 fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
             }
         })))
+        .deserialize()
+        .unwrap()
+    );
+    assert_eq!(
+        Foo::Bar {
+            bar: true,
+            baz: 'a',
+        },
+        Deserializer::new(Value::Map(vec![(
+            Value::String(Cow::Borrowed("Bar")),
+            Value::Map(vec![
+                (Value::String(Cow::Borrowed("bar")), Value::Bool(true)),
+                (Value::String(Cow::Borrowed("baz")), Value::Char('a'))
+            ])
+        )]))
         .deserialize()
         .unwrap()
     );
