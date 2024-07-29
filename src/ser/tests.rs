@@ -1,12 +1,12 @@
 #![cfg(feature = "derive")]
 #![cfg(test)]
 
-use crate::Content;
 use crate::Data;
 use crate::Enum;
 use crate::Number;
 use crate::Serializer;
 use crate::Struct;
+use crate::Value;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -20,19 +20,19 @@ const SERIALIZER: Serializer = Serializer::new();
 
 #[test]
 fn serialize_bool() {
-    assert_eq!(SERIALIZER.serialize(true).unwrap(), Content::Bool(true));
-    assert_eq!(SERIALIZER.serialize(false).unwrap(), Content::Bool(false));
+    assert_eq!(SERIALIZER.serialize(true).unwrap(), Value::Bool(true));
+    assert_eq!(SERIALIZER.serialize(false).unwrap(), Value::Bool(false));
 }
 
 #[test]
 fn serialize_i8() {
     assert_eq!(
         SERIALIZER.serialize(0i8).unwrap(),
-        Content::Number(Number::I8(0))
+        Value::Number(Number::I8(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1i8).unwrap(),
-        Content::Number(Number::I8(1))
+        Value::Number(Number::I8(1))
     );
 }
 
@@ -40,11 +40,11 @@ fn serialize_i8() {
 fn serialize_i16() {
     assert_eq!(
         SERIALIZER.serialize(0i16).unwrap(),
-        Content::Number(Number::I16(0))
+        Value::Number(Number::I16(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1i16).unwrap(),
-        Content::Number(Number::I16(1))
+        Value::Number(Number::I16(1))
     );
 }
 
@@ -52,11 +52,11 @@ fn serialize_i16() {
 fn serialize_i32() {
     assert_eq!(
         SERIALIZER.serialize(0i32).unwrap(),
-        Content::Number(Number::I32(0))
+        Value::Number(Number::I32(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1i32).unwrap(),
-        Content::Number(Number::I32(1))
+        Value::Number(Number::I32(1))
     );
 }
 
@@ -64,11 +64,11 @@ fn serialize_i32() {
 fn serialize_i64() {
     assert_eq!(
         SERIALIZER.serialize(0i64).unwrap(),
-        Content::Number(Number::I64(0))
+        Value::Number(Number::I64(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1i64).unwrap(),
-        Content::Number(Number::I64(1))
+        Value::Number(Number::I64(1))
     );
 }
 
@@ -76,11 +76,11 @@ fn serialize_i64() {
 fn serialize_i128() {
     assert_eq!(
         SERIALIZER.serialize(0i128).unwrap(),
-        Content::Number(Number::I128(0))
+        Value::Number(Number::I128(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1i128).unwrap(),
-        Content::Number(Number::I128(1))
+        Value::Number(Number::I128(1))
     );
 }
 
@@ -88,11 +88,11 @@ fn serialize_i128() {
 fn serialize_u8() {
     assert_eq!(
         SERIALIZER.serialize(0u8).unwrap(),
-        Content::Number(Number::U8(0))
+        Value::Number(Number::U8(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1u8).unwrap(),
-        Content::Number(Number::U8(1))
+        Value::Number(Number::U8(1))
     );
 }
 
@@ -100,11 +100,11 @@ fn serialize_u8() {
 fn serialize_u16() {
     assert_eq!(
         SERIALIZER.serialize(0u16).unwrap(),
-        Content::Number(Number::U16(0))
+        Value::Number(Number::U16(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1u16).unwrap(),
-        Content::Number(Number::U16(1))
+        Value::Number(Number::U16(1))
     );
 }
 
@@ -112,11 +112,11 @@ fn serialize_u16() {
 fn serialize_u32() {
     assert_eq!(
         SERIALIZER.serialize(0u32).unwrap(),
-        Content::Number(Number::U32(0))
+        Value::Number(Number::U32(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1u32).unwrap(),
-        Content::Number(Number::U32(1))
+        Value::Number(Number::U32(1))
     );
 }
 
@@ -124,11 +124,11 @@ fn serialize_u32() {
 fn serialize_u64() {
     assert_eq!(
         SERIALIZER.serialize(0u64).unwrap(),
-        Content::Number(Number::U64(0))
+        Value::Number(Number::U64(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1u64).unwrap(),
-        Content::Number(Number::U64(1))
+        Value::Number(Number::U64(1))
     );
 }
 
@@ -136,11 +136,11 @@ fn serialize_u64() {
 fn serialize_u128() {
     assert_eq!(
         SERIALIZER.serialize(0u128).unwrap(),
-        Content::Number(Number::U128(0))
+        Value::Number(Number::U128(0))
     );
     assert_eq!(
         SERIALIZER.serialize(1u128).unwrap(),
-        Content::Number(Number::U128(1))
+        Value::Number(Number::U128(1))
     );
 }
 
@@ -148,11 +148,11 @@ fn serialize_u128() {
 fn serialize_f32() {
     assert_eq!(
         SERIALIZER.serialize(0f32).unwrap(),
-        Content::Number(Number::F32(0.0))
+        Value::Number(Number::F32(0.0))
     );
     assert_eq!(
         SERIALIZER.serialize(1f32).unwrap(),
-        Content::Number(Number::F32(1.0))
+        Value::Number(Number::F32(1.0))
     );
 }
 
@@ -160,36 +160,36 @@ fn serialize_f32() {
 fn serialize_f64() {
     assert_eq!(
         SERIALIZER.serialize(0f64).unwrap(),
-        Content::Number(Number::F64(0.0))
+        Value::Number(Number::F64(0.0))
     );
     assert_eq!(
         SERIALIZER.serialize(1f64).unwrap(),
-        Content::Number(Number::F64(1.0))
+        Value::Number(Number::F64(1.0))
     );
 }
 
 #[test]
 fn serialize_char() {
-    assert_eq!(SERIALIZER.serialize('a').unwrap(), Content::Char('a'));
+    assert_eq!(SERIALIZER.serialize('a').unwrap(), Value::Char('a'));
 }
 
 #[test]
 fn serialize_string() {
     assert_eq!(
         SERIALIZER.serialize("foo").unwrap(),
-        Content::String(Cow::Borrowed("foo"))
+        Value::String(Cow::Borrowed("foo"))
     );
     assert_eq!(
         SERIALIZER.serialize("foo").unwrap(),
-        Content::String(Cow::Owned("foo".to_owned()))
+        Value::String(Cow::Owned("foo".to_owned()))
     );
     assert_eq!(
         SERIALIZER.serialize(String::new()).unwrap(),
-        Content::String(Cow::Borrowed(""))
+        Value::String(Cow::Borrowed(""))
     );
     assert_eq!(
         SERIALIZER.serialize(String::new()).unwrap(),
-        Content::String(Cow::Owned(String::new()))
+        Value::String(Cow::Owned(String::new()))
     );
 }
 
@@ -206,11 +206,11 @@ fn serialize_bytes() {
     }
     assert_eq!(
         SERIALIZER.serialize(Bytes(b"")).unwrap(),
-        Content::Bytes(Cow::Borrowed(b""))
+        Value::Bytes(Cow::Borrowed(b""))
     );
     assert_eq!(
         SERIALIZER.serialize(Bytes(b"foo")).unwrap(),
-        Content::Bytes(Cow::Borrowed(b"foo"))
+        Value::Bytes(Cow::Borrowed(b"foo"))
     );
 }
 
@@ -218,20 +218,20 @@ fn serialize_bytes() {
 fn serialize_option() {
     assert_eq!(
         SERIALIZER.serialize(None::<&str>).unwrap(),
-        Content::Option(None)
+        Value::Option(None)
     );
     assert_eq!(
         SERIALIZER.serialize(Some('a')).unwrap(),
-        Content::Option(Some(Box::new(Content::Char('a'))))
+        Value::Option(Some(Box::new(Value::Char('a'))))
     );
 }
 
 #[test]
 fn serialize_unit() {
-    assert_eq!(SERIALIZER.serialize(()).unwrap(), Content::Unit);
+    assert_eq!(SERIALIZER.serialize(()).unwrap(), Value::Unit);
     assert_eq!(
         SERIALIZER.serialize(Some(())).unwrap(),
-        Content::Option(Some(Box::new(Content::Unit)))
+        Value::Option(Some(Box::new(Value::Unit)))
     );
 }
 
@@ -241,7 +241,7 @@ fn serialize_unit_struct() {
     struct Foo;
     assert_eq!(
         SERIALIZER.serialize(Foo).unwrap(),
-        Content::Struct(Box::new(Struct {
+        Value::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Unit
         }))
@@ -256,7 +256,7 @@ fn serialize_unit_variant() {
     }
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar).unwrap(),
-        Content::Enum(Box::new(Enum {
+        Value::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
@@ -271,10 +271,10 @@ fn serialize_newtype_struct() {
     struct Foo(bool);
     assert_eq!(
         SERIALIZER.serialize(Foo(true)).unwrap(),
-        Content::Struct(Box::new(Struct {
+        Value::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::NewType {
-                value: Content::Bool(true)
+                value: Value::Bool(true)
             }
         }))
     );
@@ -288,12 +288,12 @@ fn serialize_newtype_variant() {
     }
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar(true)).unwrap(),
-        Content::Enum(Box::new(Enum {
+        Value::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
             data: Data::NewType {
-                value: Content::Bool(true)
+                value: Value::Bool(true)
             }
         }))
     );
@@ -303,11 +303,11 @@ fn serialize_newtype_variant() {
 fn serialize_seq() {
     assert_eq!(
         SERIALIZER.serialize(Vec::<bool>::new()).unwrap(),
-        Content::Seq(Vec::new())
+        Value::Seq(Vec::new())
     );
     assert_eq!(
         SERIALIZER.serialize(vec![true, false]).unwrap(),
-        Content::Seq(vec![Content::Bool(true), Content::Bool(false)])
+        Value::Seq(vec![Value::Bool(true), Value::Bool(false)])
     );
 }
 
@@ -315,14 +315,14 @@ fn serialize_seq() {
 fn serialize_tuple() {
     assert_eq!(
         SERIALIZER.serialize((true,)).unwrap(),
-        Content::Tuple(vec![Content::Bool(true)])
+        Value::Tuple(vec![Value::Bool(true)])
     );
     assert_eq!(
         SERIALIZER.serialize((true, 'a', "foo")).unwrap(),
-        Content::Tuple(vec![
-            Content::Bool(true),
-            Content::Char('a'),
-            Content::String(Cow::Borrowed("foo"))
+        Value::Tuple(vec![
+            Value::Bool(true),
+            Value::Char('a'),
+            Value::String(Cow::Borrowed("foo"))
         ])
     );
 }
@@ -333,10 +333,10 @@ fn serialize_tuple_struct() {
     struct Foo(bool, char);
     assert_eq!(
         SERIALIZER.serialize(Foo(true, 'a')).unwrap(),
-        Content::Struct(Box::new(Struct {
+        Value::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Tuple {
-                values: vec![Content::Bool(true), Content::Char('a')],
+                values: vec![Value::Bool(true), Value::Char('a')],
             }
         }))
     );
@@ -350,12 +350,12 @@ fn serialize_tuple_variant() {
     }
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar(true, 'a')).unwrap(),
-        Content::Enum(Box::new(Enum {
+        Value::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 0,
             variant: "Bar",
             data: Data::Tuple {
-                values: vec![Content::Bool(true), Content::Char('a')],
+                values: vec![Value::Bool(true), Value::Char('a')],
             }
         }))
     );
@@ -365,16 +365,16 @@ fn serialize_tuple_variant() {
 fn serialize_map() {
     assert_eq!(
         SERIALIZER.serialize(BTreeMap::<(), ()>::new()).unwrap(),
-        Content::Map(Vec::new())
+        Value::Map(Vec::new())
     );
     let mut map = BTreeMap::new();
     map.insert('f', false);
     map.insert('t', true);
     assert_eq!(
         SERIALIZER.serialize(map).unwrap(),
-        Content::Map(vec![
-            (Content::Char('f'), Content::Bool(false)),
-            (Content::Char('t'), Content::Bool(true)),
+        Value::Map(vec![
+            (Value::Char('f'), Value::Bool(false)),
+            (Value::Char('t'), Value::Bool(true)),
         ])
     );
 }
@@ -393,10 +393,10 @@ fn serialize_struct() {
                 baz: 'a'
             })
             .unwrap(),
-        Content::Struct(Box::new(Struct {
+        Value::Struct(Box::new(Struct {
             name: "Foo",
             data: Data::Struct {
-                fields: vec![("bar", Content::Bool(true)), ("baz", Content::Char('a'))],
+                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
             }
         }))
     );
@@ -417,12 +417,12 @@ fn serialize_struct_variant() {
                 baz: 'a',
             })
             .unwrap(),
-        Content::Enum(Box::new(Enum {
+        Value::Enum(Box::new(Enum {
             name: "Foo",
             variant_index: 1,
             variant: "Baz",
             data: Data::Struct {
-                fields: vec![("bar", Content::Bool(true)), ("baz", Content::Char('a'))],
+                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
             }
         }))
     );

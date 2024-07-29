@@ -22,8 +22,8 @@ fn check_error<T>(value: impl Serialize, found: Found, expected: Expected, messa
 where
     T: Deserialize<'static> + fmt::Debug,
 {
-    let content = Serializer::new().serialize(value).unwrap();
-    let error = Deserializer::new(content).deserialize::<T>().unwrap_err();
+    let value = Serializer::new().serialize(value).unwrap();
+    let error = Deserializer::new(value).deserialize::<T>().unwrap_err();
     let expected = Error::unexpected(found, expected);
     assert_eq!(error, expected);
     assert_eq!(

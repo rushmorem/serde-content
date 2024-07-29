@@ -16,10 +16,10 @@ fn roundtrip<T>(v: T)
 where
     T: Serialize + Deserialize<'static> + fmt::Debug + PartialEq,
 {
-    let content = Serializer::new().serialize(&v).unwrap();
-    let deserializer = Deserializer::new(content.clone());
+    let value = Serializer::new().serialize(&v).unwrap();
+    let deserializer = Deserializer::new(value.clone());
     assert_eq!(v, deserializer.clone().deserialize().unwrap());
-    assert_eq!(content, deserializer.deserialize().unwrap());
+    assert_eq!(value, deserializer.deserialize().unwrap());
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use crate::ser::Content;
+use crate::ser::Value;
 use crate::Data;
 use crate::Error;
 use crate::Serializer;
@@ -65,7 +65,7 @@ impl ser::Serialize for crate::Enum<'static> {
 }
 
 impl ser::SerializeStructVariant for Enum {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
@@ -82,12 +82,12 @@ impl ser::SerializeStructVariant for Enum {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Enum(Box::new(self.r#enum)))
+        Ok(Value::Enum(Box::new(self.r#enum)))
     }
 }
 
 impl ser::SerializeTupleVariant for Enum {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
@@ -104,6 +104,6 @@ impl ser::SerializeTupleVariant for Enum {
     }
 
     fn end(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Enum(Box::new(self.r#enum)))
+        Ok(Value::Enum(Box::new(self.r#enum)))
     }
 }

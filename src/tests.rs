@@ -1,12 +1,12 @@
 #![cfg(test)]
 
-use crate::Content;
 use crate::Error;
+use crate::Value;
 use core::mem::size_of;
 
 #[test]
-fn content_size() {
-    assert!(size_of::<Content>() <= 32);
+fn value_size() {
+    assert!(size_of::<Value>() <= 32);
 }
 
 #[test]

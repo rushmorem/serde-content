@@ -27,9 +27,9 @@ use serde::ser::SerializeSeq;
 use serde::ser::SerializeTuple;
 use tuple::Tuple;
 
-type Content = super::Content<'static>;
+type Value = super::Value<'static>;
 
-/// A structure for serialising Rust values into [crate::Content].
+/// A structure for serialising Rust values into [crate::Value].
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
 pub struct Serializer {
     human_readable: bool,
@@ -52,8 +52,8 @@ impl Serializer {
         self
     }
 
-    /// Convert a `T` into `Content` which is an enum that can represent any valid Rust data.
-    pub fn serialize<T>(self, value: T) -> Result<Content, Error>
+    /// Convert a `T` into `Value` which is an enum that can represent any valid Rust data.
+    pub fn serialize<T>(self, value: T) -> Result<Value, Error>
     where
         T: ser::Serialize,
     {
@@ -62,7 +62,7 @@ impl Serializer {
 }
 
 impl ser::Serializer for Serializer {
-    type Ok = Content;
+    type Ok = Value;
     type Error = Error;
 
     type SerializeSeq = Seq;
@@ -74,75 +74,75 @@ impl ser::Serializer for Serializer {
     type SerializeStructVariant = Enum;
 
     fn serialize_bool(self, value: bool) -> Result<Self::Ok, Error> {
-        Ok(Content::Bool(value))
+        Ok(Value::Bool(value))
     }
 
     fn serialize_i8(self, value: i8) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::I8(value)))
+        Ok(Value::Number(Number::I8(value)))
     }
 
     fn serialize_i16(self, value: i16) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::I16(value)))
+        Ok(Value::Number(Number::I16(value)))
     }
 
     fn serialize_i32(self, value: i32) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::I32(value)))
+        Ok(Value::Number(Number::I32(value)))
     }
 
     fn serialize_i64(self, value: i64) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::I64(value)))
+        Ok(Value::Number(Number::I64(value)))
     }
 
     fn serialize_i128(self, value: i128) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::I128(value)))
+        Ok(Value::Number(Number::I128(value)))
     }
 
     fn serialize_u8(self, value: u8) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::U8(value)))
+        Ok(Value::Number(Number::U8(value)))
     }
 
     fn serialize_u16(self, value: u16) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::U16(value)))
+        Ok(Value::Number(Number::U16(value)))
     }
 
     fn serialize_u32(self, value: u32) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::U32(value)))
+        Ok(Value::Number(Number::U32(value)))
     }
 
     fn serialize_u64(self, value: u64) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::U64(value)))
+        Ok(Value::Number(Number::U64(value)))
     }
 
     fn serialize_u128(self, value: u128) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::U128(value)))
+        Ok(Value::Number(Number::U128(value)))
     }
 
     fn serialize_f32(self, value: f32) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::F32(value)))
+        Ok(Value::Number(Number::F32(value)))
     }
 
     fn serialize_f64(self, value: f64) -> Result<Self::Ok, Error> {
-        Ok(Content::Number(Number::F64(value)))
+        Ok(Value::Number(Number::F64(value)))
     }
 
     fn serialize_char(self, value: char) -> Result<Self::Ok, Error> {
-        Ok(Content::Char(value))
+        Ok(Value::Char(value))
     }
 
     fn serialize_str(self, value: &str) -> Result<Self::Ok, Error> {
-        Ok(Content::String(Cow::Owned(value.to_owned())))
+        Ok(Value::String(Cow::Owned(value.to_owned())))
     }
 
     fn serialize_bytes(self, value: &[u8]) -> Result<Self::Ok, Error> {
-        Ok(Content::Bytes(Cow::Owned(value.to_owned())))
+        Ok(Value::Bytes(Cow::Owned(value.to_owned())))
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Unit)
+        Ok(Value::Unit)
     }
 
     fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Error> {
-        Ok(Content::Struct(Box::new(super::Struct {
+        Ok(Value::Struct(Box::new(super::Struct {
             name,
             data: Data::Unit,
         })))
@@ -154,7 +154,7 @@ impl ser::Serializer for Serializer {
         variant_index: u32,
         variant: &'static str,
     ) -> Result<Self::Ok, Error> {
-        Ok(Content::Enum(Box::new(super::Enum {
+        Ok(Value::Enum(Box::new(super::Enum {
             name,
             variant_index,
             variant,
@@ -166,7 +166,7 @@ impl ser::Serializer for Serializer {
     where
         T: ?Sized + ser::Serialize,
     {
-        Ok(Content::Struct(Box::new(super::Struct {
+        Ok(Value::Struct(Box::new(super::Struct {
             name,
             data: Data::NewType {
                 value: value.serialize(self)?,
@@ -184,7 +184,7 @@ impl ser::Serializer for Serializer {
     where
         T: ?Sized + ser::Serialize,
     {
-        Ok(Content::Enum(Box::new(super::Enum {
+        Ok(Value::Enum(Box::new(super::Enum {
             name,
             variant_index,
             variant,
@@ -195,15 +195,15 @@ impl ser::Serializer for Serializer {
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Error> {
-        Ok(Content::Option(None))
+        Ok(Value::Option(None))
     }
 
     fn serialize_some<T>(self, value: &T) -> Result<Self::Ok, Error>
     where
         T: ?Sized + ser::Serialize,
     {
-        let content = value.serialize(self)?;
-        Ok(Content::Option(Some(Box::new(content))))
+        let value = value.serialize(self)?;
+        Ok(Value::Option(Some(Box::new(value))))
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Error> {
@@ -292,7 +292,7 @@ impl ser::Serializer for Serializer {
     where
         T: ?Sized + fmt::Display,
     {
-        Ok(Content::String(Cow::Owned(value.to_string())))
+        Ok(Value::String(Cow::Owned(value.to_string())))
     }
 
     fn is_human_readable(&self) -> bool {
@@ -300,39 +300,39 @@ impl ser::Serializer for Serializer {
     }
 }
 
-impl ser::Serialize for Content {
+impl ser::Serialize for Value {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
         match self {
-            Content::Unit => serializer.serialize_unit(),
-            Content::Bool(v) => serializer.serialize_bool(*v),
-            Content::Number(v) => v.serialize(serializer),
-            Content::Char(v) => serializer.serialize_char(*v),
-            Content::String(v) => serializer.serialize_str(v.as_ref()),
-            Content::Bytes(v) => serializer.serialize_bytes(v.as_ref()),
-            Content::Seq(v) => {
+            Value::Unit => serializer.serialize_unit(),
+            Value::Bool(v) => serializer.serialize_bool(*v),
+            Value::Number(v) => v.serialize(serializer),
+            Value::Char(v) => serializer.serialize_char(*v),
+            Value::String(v) => serializer.serialize_str(v.as_ref()),
+            Value::Bytes(v) => serializer.serialize_bytes(v.as_ref()),
+            Value::Seq(v) => {
                 let mut seq = serializer.serialize_seq(Some(v.len()))?;
                 for value in v {
                     seq.serialize_element(value)?;
                 }
                 seq.end()
             }
-            Content::Map(v) => {
+            Value::Map(v) => {
                 let mut map = serializer.serialize_map(Some(v.len()))?;
                 for (key, value) in v {
                     map.serialize_entry(key, value)?;
                 }
                 map.end()
             }
-            Content::Option(v) => match v {
+            Value::Option(v) => match v {
                 Some(v) => serializer.serialize_some(v),
                 None => serializer.serialize_none(),
             },
-            Content::Struct(v) => v.serialize(serializer),
-            Content::Enum(v) => v.serialize(serializer),
-            Content::Tuple(v) => {
+            Value::Struct(v) => v.serialize(serializer),
+            Value::Enum(v) => v.serialize(serializer),
+            Value::Tuple(v) => {
                 let mut tup = serializer.serialize_tuple(v.len())?;
                 for value in v {
                     tup.serialize_element(value)?;

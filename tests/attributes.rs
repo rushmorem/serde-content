@@ -3,11 +3,11 @@
 
 use serde::Deserialize;
 use serde::Serialize;
-use serde_content::Content;
 use serde_content::Data;
 use serde_content::Deserializer;
 use serde_content::Serializer;
 use serde_content::Struct;
+use serde_content::Value;
 
 #[test]
 fn flatten() {
@@ -25,8 +25,8 @@ fn flatten() {
     let foo = Foo { bar: true };
     let baz = Baz { foo };
 
-    let content = Serializer::new().serialize(&baz).unwrap();
-    assert_eq!(baz, Deserializer::new(content).deserialize().unwrap());
+    let value = Serializer::new().serialize(&baz).unwrap();
+    assert_eq!(baz, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
@@ -40,14 +40,14 @@ fn skip() {
 
     let foo = Foo { bar: true, _baz: 9 };
 
-    let content = Serializer::new().serialize(&foo).unwrap();
-    let expected = Content::Struct(Box::new(Struct {
+    let value = Serializer::new().serialize(&foo).unwrap();
+    let expected = Value::Struct(Box::new(Struct {
         name: "Foo",
         data: Data::Struct {
-            fields: vec![("bar", Content::Bool(true))],
+            fields: vec![("bar", Value::Bool(true))],
         },
     }));
-    assert_eq!(content, expected);
+    assert_eq!(value, expected);
 }
 
 #[test]
@@ -61,8 +61,8 @@ fn untagged() {
     let bar = 56;
     let foo = Foo::Bar(bar);
 
-    let content = Serializer::new().serialize(&foo).unwrap();
-    let deserializer = Deserializer::new(content);
+    let value = Serializer::new().serialize(&foo).unwrap();
+    let deserializer = Deserializer::new(value);
     assert_eq!(foo, deserializer.clone().deserialize().unwrap());
     assert_eq!(bar, deserializer.deserialize().unwrap());
 }

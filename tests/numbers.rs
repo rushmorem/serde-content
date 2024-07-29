@@ -37,8 +37,8 @@ macro_rules! range {
 fn coerce_i8() {
     let serializer = Serializer::new();
     for v in [i8::MIN, 0, i8::MAX] {
-        let content = serializer.serialize(v).unwrap();
-        let deserializer = Deserializer::new(content);
+        let value = serializer.serialize(v).unwrap();
+        let deserializer = Deserializer::new(value);
         // Conversion between different number types is not supported by default.
         assert_err::<u8>(
             deserializer.clone(),
@@ -144,8 +144,8 @@ fn coerce_i8() {
 fn coerce_u8() {
     let serializer = Serializer::new();
     for v in [u8::MIN, 0, u8::MAX] {
-        let content = serializer.serialize(v).unwrap();
-        let deserializer = Deserializer::new(content);
+        let value = serializer.serialize(v).unwrap();
+        let deserializer = Deserializer::new(value);
         assert_err::<i8>(
             deserializer.clone(),
             Found::Number(Number::U8(v)),
@@ -233,8 +233,8 @@ fn coerce_u8() {
 fn coerce_i16() {
     let serializer = Serializer::new();
     for v in [i16::MIN, 0, i16::MAX] {
-        let content = serializer.serialize(v).unwrap();
-        let deserializer = Deserializer::new(content);
+        let value = serializer.serialize(v).unwrap();
+        let deserializer = Deserializer::new(value);
         assert_err::<i8>(
             deserializer.clone(),
             Found::Number(Number::I16(v)),
@@ -344,8 +344,8 @@ fn coerce_i16() {
 fn coerce_f32() {
     let serializer = Serializer::new();
     for v in [f32::MIN, 0.0, f32::MAX] {
-        let content = serializer.serialize(v).unwrap();
-        let deserializer = Deserializer::new(content);
+        let value = serializer.serialize(v).unwrap();
+        let deserializer = Deserializer::new(value);
         assert_err::<f64>(
             deserializer.clone(),
             Found::Number(Number::F32(v)),
@@ -360,8 +360,8 @@ fn coerce_f32() {
 fn coerce_f64() {
     let serializer = Serializer::new();
     for v in [f64::MIN, 0.0, f64::MAX] {
-        let content = serializer.serialize(v).unwrap();
-        let deserializer = Deserializer::new(content);
+        let value = serializer.serialize(v).unwrap();
+        let deserializer = Deserializer::new(value);
         assert_err::<f32>(
             deserializer.clone(),
             Found::Number(Number::F64(v)),

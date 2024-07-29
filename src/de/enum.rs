@@ -2,12 +2,12 @@ use crate::de::error::Unexpected;
 use crate::de::identifier::Identifier;
 use crate::de::Map;
 use crate::de::Seq;
-use crate::Content;
 use crate::Data;
 use crate::DataType;
 use crate::Enum;
 use crate::Error;
 use crate::Expected;
+use crate::Value;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -24,11 +24,11 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Enum<'de> {
     type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
-        use crate::Content;
         use crate::Deserializer;
+        use crate::Value;
         use alloc::boxed::Box;
 
-        Deserializer::new(Content::Enum(Box::new(self)))
+        Deserializer::new(Value::Enum(Box::new(self)))
     }
 }
 
@@ -89,7 +89,7 @@ impl<'de> de::VariantAccess<'de> for Deserializer<'de> {
         match self.enum_box.data {
             Data::NewType { value } => {
                 let deserializer = crate::Deserializer {
-                    content: value,
+                    value,
                     human_readable: self.human_readable,
                     coerce_numbers: self.coerce_numbers,
                 };
@@ -217,7 +217,7 @@ impl<'de> de::Visitor<'de> for Visitor {
     where
         A: de::EnumAccess<'de>,
     {
-        let variant_access = data.variant::<Content>()?.1;
+        let variant_access = data.variant::<Value>()?.1;
         variant_access.unit_variant()?;
         Ok(Enum {
             name,
@@ -237,7 +237,7 @@ impl<'de> de::Visitor<'de> for Visitor {
     where
         A: de::EnumAccess<'de>,
     {
-        let variant_access = data.variant::<Content>()?.1;
+        let variant_access = data.variant::<Value>()?.1;
         Ok(Enum {
             name,
             variant_index,
@@ -262,10 +262,10 @@ impl<'de> de::Visitor<'de> for Visitor {
         struct SeqVisitor;
 
         impl<'de> de::Visitor<'de> for SeqVisitor {
-            type Value = Vec<Content<'de>>;
+            type Value = Vec<Value<'de>>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("Vec<Content>")
+                formatter.write_str("Vec<Value>")
             }
 
             fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
@@ -274,14 +274,14 @@ impl<'de> de::Visitor<'de> for Visitor {
             {
                 let len = visitor.size_hint().unwrap_or_default();
                 let mut vec = Vec::with_capacity(len);
-                while let Some(content) = visitor.next_element()? {
-                    vec.push(content);
+                while let Some(value) = visitor.next_element()? {
+                    vec.push(value);
                 }
                 Ok(vec)
             }
         }
 
-        let variant_access = data.variant::<Content>()?.1;
+        let variant_access = data.variant::<Value>()?.1;
         Ok(Enum {
             name,
             variant_index,
@@ -306,7 +306,7 @@ impl<'de> de::Visitor<'de> for Visitor {
         struct MapVisitor<'a>(&'a [&'static str]);
 
         impl<'de> de::Visitor<'de> for MapVisitor<'_> {
-            type Value = Vec<(&'static str, Content<'de>)>;
+            type Value = Vec<(&'static str, Value<'de>)>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a map")
@@ -330,7 +330,7 @@ impl<'de> de::Visitor<'de> for Visitor {
             }
         }
 
-        let variant_access = data.variant::<Content>()?.1;
+        let variant_access = data.variant::<Value>()?.1;
         let visitor = MapVisitor(fields);
         Ok(Enum {
             name,

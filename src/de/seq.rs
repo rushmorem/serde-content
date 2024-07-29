@@ -1,18 +1,18 @@
-use crate::Content;
 use crate::Deserializer;
 use crate::Error;
+use crate::Value;
 use alloc::vec::IntoIter;
 use alloc::vec::Vec;
 use serde::de;
 
 pub(super) struct Seq<'de> {
-    iter: IntoIter<Content<'de>>,
+    iter: IntoIter<Value<'de>>,
     human_readable: bool,
     coerce_numbers: bool,
 }
 
 impl<'de> Seq<'de> {
-    pub(super) fn new(vec: Vec<Content<'de>>, human_readable: bool, coerce_numbers: bool) -> Self {
+    pub(super) fn new(vec: Vec<Value<'de>>, human_readable: bool, coerce_numbers: bool) -> Self {
         Self {
             human_readable,
             coerce_numbers,
@@ -31,7 +31,7 @@ impl<'de> de::SeqAccess<'de> for Seq<'de> {
         match self.iter.next() {
             Some(value) => {
                 let deserializer = Deserializer {
-                    content: value,
+                    value,
                     human_readable: self.human_readable,
                     coerce_numbers: self.coerce_numbers,
                 };

@@ -12,13 +12,13 @@ struct Point {
 fn main() {
     let point = Point { x: 1, y: 2 };
 
-    // Convert the Point to the Content type.
+    // Convert the Point to the Value type.
     let serialized = Serializer::new().serialize(&point).unwrap();
 
-    // Pretty print the serialised Content.
+    // Pretty print the serialised Value.
     dbg!(&serialized);
 
-    // Convert the Content back to a Point.
+    // Convert the Value back to a Point.
     let deserialized: Point = Deserializer::new(serialized).deserialize().unwrap();
 
     // Pretty print the deserialised Point.

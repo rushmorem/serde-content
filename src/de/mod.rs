@@ -8,12 +8,12 @@ mod seq;
 mod r#struct;
 mod tests;
 
-use crate::Content;
 use crate::Data;
 use crate::DataType;
 use crate::Error;
 use crate::Expected;
 use crate::Number;
+use crate::Value;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -33,10 +33,10 @@ use serde::de::Visitor;
 
 pub use error::Unexpected;
 
-/// A structure that deserializes Rust values into [Content].
+/// A structure that deserializes Rust values into [Value].
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Deserializer<'de> {
-    content: Content<'de>,
+    value: Value<'de>,
     human_readable: bool,
     coerce_numbers: bool,
 }
@@ -46,9 +46,9 @@ impl<'de> Deserializer<'de> {
     ///
     /// The deserializer created doesn't deserialize in human-readable form. To deserialize
     /// in human-readable form, call [Deserializer::human_readable] on the resulting deserializer.
-    pub const fn new(content: Content<'de>) -> Self {
+    pub const fn new(value: Value<'de>) -> Self {
         Self {
-            content,
+            value,
             human_readable: false,
             coerce_numbers: false,
         }
@@ -66,7 +66,7 @@ impl<'de> Deserializer<'de> {
         self
     }
 
-    /// Deserializes a value `T` from [`Content`]
+    /// Deserializes a value `T` from [`Value`]
     pub fn deserialize<T>(self) -> Result<T, Error>
     where
         T: de::Deserialize<'de>,
@@ -85,7 +85,7 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Deserializer<'de> {
 }
 
 #[cfg(feature = "std")]
-impl<'de> serde::de::IntoDeserializer<'de, Error> for Content<'de> {
+impl<'de> serde::de::IntoDeserializer<'de, Error> for Value<'de> {
     type Deserializer = Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
@@ -100,10 +100,10 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Unit => visitor.visit_unit(),
-            Content::Bool(v) => visitor.visit_bool(v),
-            Content::Number(n) => match n {
+        match self.value {
+            Value::Unit => visitor.visit_unit(),
+            Value::Bool(v) => visitor.visit_bool(v),
+            Value::Number(n) => match n {
                 Number::I8(v) => visitor.visit_i8(v),
                 Number::U8(v) => visitor.visit_u8(v),
                 Number::I16(v) => visitor.visit_i16(v),
@@ -117,32 +117,32 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Number::I128(v) => visitor.visit_i128(v),
                 Number::U128(v) => visitor.visit_u128(v),
             },
-            Content::Char(v) => visitor.visit_char(v),
-            Content::String(v) => match v {
+            Value::Char(v) => visitor.visit_char(v),
+            Value::String(v) => match v {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
-            Content::Bytes(v) => match v {
+            Value::Bytes(v) => match v {
                 Cow::Borrowed(v) => visitor.visit_borrowed_bytes(v),
                 Cow::Owned(v) => visitor.visit_byte_buf(v),
             },
-            Content::Seq(v) => {
+            Value::Seq(v) => {
                 visitor.visit_seq(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
-            Content::Map(v) => {
+            Value::Map(v) => {
                 visitor.visit_map(Map::from((v, self.human_readable, self.coerce_numbers)))
             }
-            Content::Option(v) => match v {
+            Value::Option(v) => match v {
                 Some(v) => {
-                    self.content = *v;
+                    self.value = *v;
                     visitor.visit_some(self)
                 }
                 None => visitor.visit_none(),
             },
-            Content::Struct(v) => match v.data {
+            Value::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit_struct(v.name),
                 Data::NewType { value } => {
-                    self.content = value;
+                    self.value = value;
                     visitor.visit_newtype_struct_with_name(v.name, self)
                 }
                 Data::Tuple { values } => visitor.visit_tuple_struct(
@@ -162,10 +162,10 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     visitor.visit_struct(v.name, &field_names, data)
                 }
             },
-            Content::Enum(v) => {
+            Value::Enum(v) => {
                 r#enum::visit_enum(v.name, v, self.human_readable, self.coerce_numbers, visitor)
             }
-            Content::Tuple(v) => {
+            Value::Tuple(v) => {
                 visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
         }
@@ -175,9 +175,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Bool(v) => visitor.visit_bool(v),
-            _ => Err(self.content.unexpected(Expected::Bool)),
+        match self.value {
+            Value::Bool(v) => visitor.visit_bool(v),
+            _ => Err(self.value.unexpected(Expected::Bool)),
         }
     }
 
@@ -185,9 +185,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::I8, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::I8)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::I8, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::I8)),
         }
     }
 
@@ -195,9 +195,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::I16, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::I16)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::I16, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::I16)),
         }
     }
 
@@ -205,9 +205,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::I32, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::I32)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::I32, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::I32)),
         }
     }
 
@@ -215,9 +215,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::I64, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::I64)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::I64, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::I64)),
         }
     }
 
@@ -225,9 +225,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::I128, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::I128)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::I128, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::I128)),
         }
     }
 
@@ -235,9 +235,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::U8, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::U8)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::U8, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::U8)),
         }
     }
 
@@ -245,9 +245,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::U16, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::U16)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::U16, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::U16)),
         }
     }
 
@@ -255,9 +255,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::U32, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::U32)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::U32, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::U32)),
         }
     }
 
@@ -265,9 +265,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::U64, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::U64)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::U64, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::U64)),
         }
     }
 
@@ -275,9 +275,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::U128, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::U128)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::U128, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::U128)),
         }
     }
 
@@ -285,9 +285,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::F32, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::F32)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::F32, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::F32)),
         }
     }
 
@@ -295,9 +295,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Number(n) => number::visit(n, Expected::F64, self.coerce_numbers, visitor),
-            _ => Err(self.content.unexpected(Expected::F64)),
+        match self.value {
+            Value::Number(n) => number::visit(n, Expected::F64, self.coerce_numbers, visitor),
+            _ => Err(self.value.unexpected(Expected::F64)),
         }
     }
 
@@ -305,9 +305,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Char(v) => visitor.visit_char(v),
-            _ => Err(self.content.unexpected(Expected::Char)),
+        match self.value {
+            Value::Char(v) => visitor.visit_char(v),
+            _ => Err(self.value.unexpected(Expected::Char)),
         }
     }
 
@@ -315,12 +315,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::String(v) => match v {
+        match self.value {
+            Value::String(v) => match v {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
-            _ => Err(self.content.unexpected(Expected::String)),
+            _ => Err(self.value.unexpected(Expected::String)),
         }
     }
 
@@ -335,12 +335,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Bytes(v) => match v {
+        match self.value {
+            Value::Bytes(v) => match v {
                 Cow::Borrowed(v) => visitor.visit_borrowed_bytes(v),
                 Cow::Owned(v) => visitor.visit_byte_buf(v),
             },
-            _ => Err(self.content.unexpected(Expected::Bytes)),
+            _ => Err(self.value.unexpected(Expected::Bytes)),
         }
     }
 
@@ -355,10 +355,10 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Option(v) => match v {
+        match self.value {
+            Value::Option(v) => match v {
                 Some(v) => {
-                    self.content = *v;
+                    self.value = *v;
                     visitor.visit_some(self)
                 }
                 None => visitor.visit_none(),
@@ -371,9 +371,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Unit => visitor.visit_unit(),
-            _ => Err(self.content.unexpected(Expected::Unit)),
+        match self.value {
+            Value::Unit => visitor.visit_unit(),
+            _ => Err(self.value.unexpected(Expected::Unit)),
         }
     }
 
@@ -385,15 +385,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Struct(v) => match v.data {
+        match self.value {
+            Value::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit_struct(name),
                 _ => Err(v.unexpected(Expected::Struct {
                     name: Some(name.to_owned()),
                     typ: Some(DataType::Unit),
                 })),
             },
-            _ => Err(self.content.unexpected(Expected::Struct {
+            _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Unit),
             })),
@@ -408,14 +408,14 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Struct(v) => match v.data {
+        match self.value {
+            Value::Struct(v) => match v.data {
                 Data::NewType { value } => {
-                    self.content = value;
+                    self.value = value;
                     visitor.visit_newtype_struct_with_name(v.name, self)
                 }
                 _ => {
-                    self.content = Content::Struct(v);
+                    self.value = Value::Struct(v);
                     visitor.visit_newtype_struct(self)
                 }
             },
@@ -427,11 +427,11 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Seq(v) => {
+        match self.value {
+            Value::Seq(v) => {
                 visitor.visit_seq(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
-            _ => Err(self.content.unexpected(Expected::Seq)),
+            _ => Err(self.value.unexpected(Expected::Seq)),
         }
     }
 
@@ -439,11 +439,11 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Tuple(v) => {
+        match self.value {
+            Value::Tuple(v) => {
                 visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
-            _ => Err(self.content.unexpected(Expected::Tuple(len))),
+            _ => Err(self.value.unexpected(Expected::Tuple(len))),
         }
     }
 
@@ -456,8 +456,8 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Struct(v) => match v.data {
+        match self.value {
+            Value::Struct(v) => match v.data {
                 Data::Tuple { values } => visitor.visit_tuple_struct(
                     name,
                     Seq::new(values, self.human_readable, self.coerce_numbers),
@@ -467,7 +467,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     typ: Some(DataType::Tuple),
                 })),
             },
-            _ => Err(self.content.unexpected(Expected::Struct {
+            _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Tuple),
             })),
@@ -478,11 +478,11 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Map(v) => {
+        match self.value {
+            Value::Map(v) => {
                 visitor.visit_map(Map::from((v, self.human_readable, self.coerce_numbers)))
             }
-            _ => Err(self.content.unexpected(Expected::Map)),
+            _ => Err(self.value.unexpected(Expected::Map)),
         }
     }
 
@@ -496,8 +496,8 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         V: Visitor<'de>,
     {
         let field_names = fields;
-        match self.content {
-            Content::Struct(v) => match v.data {
+        match self.value {
+            Value::Struct(v) => match v.data {
                 Data::Struct { fields } => visitor.visit_struct(
                     name,
                     field_names,
@@ -508,7 +508,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                     typ: Some(DataType::Struct),
                 })),
             },
-            _ => Err(self.content.unexpected(Expected::Struct {
+            _ => Err(self.value.unexpected(Expected::Struct {
                 name: Some(name.to_owned()),
                 typ: Some(DataType::Struct),
             })),
@@ -524,11 +524,11 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::Enum(v) => {
+        match self.value {
+            Value::Enum(v) => {
                 r#enum::visit_enum(name, v, self.human_readable, self.coerce_numbers, visitor)
             }
-            _ => Err(self.content.unexpected(Expected::Enum {
+            _ => Err(self.value.unexpected(Expected::Enum {
                 name: Some(name.to_owned()),
                 typ: None,
             })),
@@ -539,13 +539,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.content {
-            Content::String(v) => match v {
+        match self.value {
+            Value::String(v) => match v {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
-            Content::Enum(v) => visitor.visit_borrowed_str(v.variant),
-            _ => Err(self.content.unexpected(Expected::Identifier)),
+            Value::Enum(v) => visitor.visit_borrowed_str(v.variant),
+            _ => Err(self.value.unexpected(Expected::Identifier)),
         }
     }
 
@@ -561,19 +561,19 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     }
 }
 
-impl<'de> de::Deserialize<'de> for Content<'de> {
+impl<'de> de::Deserialize<'de> for Value<'de> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_any(ContentVisitor)
+        deserializer.deserialize_any(ValueVisitor)
     }
 }
 
-struct ContentVisitor;
+struct ValueVisitor;
 
-impl<'de> Visitor<'de> for ContentVisitor {
-    type Value = Content<'de>;
+impl<'de> Visitor<'de> for ValueVisitor {
+    type Value = Value<'de>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("any value")
@@ -583,147 +583,147 @@ impl<'de> Visitor<'de> for ContentVisitor {
     where
         F: de::Error,
     {
-        Ok(Content::Bool(value))
+        Ok(Value::Bool(value))
     }
 
     fn visit_i8<F>(self, value: i8) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::I8(value)))
+        Ok(Value::Number(Number::I8(value)))
     }
 
     fn visit_i16<F>(self, value: i16) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::I16(value)))
+        Ok(Value::Number(Number::I16(value)))
     }
 
     fn visit_i32<F>(self, value: i32) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::I32(value)))
+        Ok(Value::Number(Number::I32(value)))
     }
 
     fn visit_i64<F>(self, value: i64) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::I64(value)))
+        Ok(Value::Number(Number::I64(value)))
     }
 
     fn visit_u8<F>(self, value: u8) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::U8(value)))
+        Ok(Value::Number(Number::U8(value)))
     }
 
     fn visit_u16<F>(self, value: u16) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::U16(value)))
+        Ok(Value::Number(Number::U16(value)))
     }
 
     fn visit_u32<F>(self, value: u32) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::U32(value)))
+        Ok(Value::Number(Number::U32(value)))
     }
 
     fn visit_u64<F>(self, value: u64) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::U64(value)))
+        Ok(Value::Number(Number::U64(value)))
     }
 
     fn visit_f32<F>(self, value: f32) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::F32(value)))
+        Ok(Value::Number(Number::F32(value)))
     }
 
     fn visit_f64<F>(self, value: f64) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Number(Number::F64(value)))
+        Ok(Value::Number(Number::F64(value)))
     }
 
     fn visit_char<F>(self, value: char) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Char(value))
+        Ok(Value::Char(value))
     }
 
     fn visit_str<F>(self, value: &str) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::String(Cow::Owned(value.to_owned())))
+        Ok(Value::String(Cow::Owned(value.to_owned())))
     }
 
     fn visit_borrowed_str<F>(self, value: &'de str) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::String(Cow::Borrowed(value)))
+        Ok(Value::String(Cow::Borrowed(value)))
     }
 
     fn visit_string<F>(self, value: String) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::String(Cow::Owned(value)))
+        Ok(Value::String(Cow::Owned(value)))
     }
 
     fn visit_bytes<F>(self, value: &[u8]) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Bytes(Cow::Owned(value.to_owned())))
+        Ok(Value::Bytes(Cow::Owned(value.to_owned())))
     }
 
     fn visit_borrowed_bytes<F>(self, value: &'de [u8]) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Bytes(Cow::Borrowed(value)))
+        Ok(Value::Bytes(Cow::Borrowed(value)))
     }
 
     fn visit_byte_buf<F>(self, value: Vec<u8>) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Bytes(Cow::Owned(value)))
+        Ok(Value::Bytes(Cow::Owned(value)))
     }
 
     fn visit_unit<F>(self) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Unit)
+        Ok(Value::Unit)
     }
 
     fn visit_none<F>(self) -> Result<Self::Value, F>
     where
         F: de::Error,
     {
-        Ok(Content::Option(None))
+        Ok(Value::Option(None))
     }
 
     fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        de::Deserialize::deserialize(deserializer).map(|v| Content::Option(Some(Box::new(v))))
+        de::Deserialize::deserialize(deserializer).map(|v| Value::Option(Some(Box::new(v))))
     }
 
     fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
@@ -731,7 +731,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         D: de::Deserializer<'de>,
     {
         let data = r#struct::Visitor.visit_newtype_struct(deserializer)?;
-        Ok(Content::Struct(Box::new(data)))
+        Ok(Value::Struct(Box::new(data)))
     }
 
     fn visit_newtype_struct_with_name<D>(
@@ -743,7 +743,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         D: de::Deserializer<'de>,
     {
         let data = r#struct::Visitor.visit_newtype_struct_with_name(name, deserializer)?;
-        Ok(Content::Struct(Box::new(data)))
+        Ok(Value::Struct(Box::new(data)))
     }
 
     fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
@@ -755,7 +755,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         while let Some(e) = visitor.next_element()? {
             vec.push(e);
         }
-        Ok(Content::Seq(vec))
+        Ok(Value::Seq(vec))
     }
 
     fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
@@ -767,21 +767,21 @@ impl<'de> Visitor<'de> for ContentVisitor {
         while let Some(kv) = visitor.next_entry()? {
             vec.push(kv);
         }
-        Ok(Content::Map(vec))
+        Ok(Value::Map(vec))
     }
 
     fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(Content::Number(Number::I128(v)))
+        Ok(Value::Number(Number::I128(v)))
     }
 
     fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Ok(Content::Number(Number::U128(v)))
+        Ok(Value::Number(Number::U128(v)))
     }
 
     fn visit_unit_struct<E>(self, name: &'static str) -> Result<Self::Value, E>
@@ -789,7 +789,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         E: de::Error,
     {
         let data = r#struct::Visitor.visit_unit_struct(name)?;
-        Ok(Content::Struct(Box::new(data)))
+        Ok(Value::Struct(Box::new(data)))
     }
 
     fn visit_tuple<A>(self, mut visitor: A) -> Result<Self::Value, A::Error>
@@ -801,7 +801,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         while let Some(e) = visitor.next_element()? {
             vec.push(e);
         }
-        Ok(Content::Tuple(vec))
+        Ok(Value::Tuple(vec))
     }
 
     fn visit_tuple_struct<A>(self, name: &'static str, data: A) -> Result<Self::Value, A::Error>
@@ -809,7 +809,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         A: SeqAccess<'de>,
     {
         let data = r#struct::Visitor.visit_tuple_struct(name, data)?;
-        Ok(Content::Struct(Box::new(data)))
+        Ok(Value::Struct(Box::new(data)))
     }
 
     fn visit_struct<A>(
@@ -822,7 +822,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         A: MapAccess<'de>,
     {
         let data = r#struct::Visitor.visit_struct(name, fields, data)?;
-        Ok(Content::Struct(Box::new(data)))
+        Ok(Value::Struct(Box::new(data)))
     }
 
     fn visit_unit_variant<A>(
@@ -836,7 +836,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         A: de::EnumAccess<'de>,
     {
         let data = r#enum::Visitor.visit_unit_variant(name, variant_index, variant, data)?;
-        Ok(Content::Enum(Box::new(data)))
+        Ok(Value::Enum(Box::new(data)))
     }
 
     fn visit_newtype_variant<A>(
@@ -850,7 +850,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         A: de::EnumAccess<'de>,
     {
         let data = r#enum::Visitor.visit_newtype_variant(name, variant_index, variant, data)?;
-        Ok(Content::Enum(Box::new(data)))
+        Ok(Value::Enum(Box::new(data)))
     }
 
     fn visit_tuple_variant<A>(
@@ -865,7 +865,7 @@ impl<'de> Visitor<'de> for ContentVisitor {
         A: EnumAccess<'de>,
     {
         let data = r#enum::Visitor.visit_tuple_variant(name, variant_index, variant, len, data)?;
-        Ok(Content::Enum(Box::new(data)))
+        Ok(Value::Enum(Box::new(data)))
     }
 
     fn visit_struct_variant<A>(
@@ -881,6 +881,6 @@ impl<'de> Visitor<'de> for ContentVisitor {
     {
         let data =
             r#enum::Visitor.visit_struct_variant(name, variant_index, variant, fields, data)?;
-        Ok(Content::Enum(Box::new(data)))
+        Ok(Value::Enum(Box::new(data)))
     }
 }
