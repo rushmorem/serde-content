@@ -58,7 +58,7 @@ impl fmt::Display for Error {
             ErrorKind::Custom(msg) => write!(f, "{msg}"),
             ErrorKind::Unexpected { found, expected } => write!(
                 f,
-                "failed to deserialise; expected {expected}, found {found}"
+                "failed to deserialize; expected {expected}, found {found}"
             ),
         }
     }

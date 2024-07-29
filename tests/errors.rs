@@ -28,7 +28,7 @@ where
     assert_eq!(error, expected);
     assert_eq!(
         error.to_string(),
-        format!("failed to deserialise; {message}"),
+        format!("failed to deserialize; {message}"),
     );
 }
 
