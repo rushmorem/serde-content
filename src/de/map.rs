@@ -2,6 +2,7 @@ use crate::de::identifier::Identifier;
 use crate::Deserializer;
 use crate::Error;
 use crate::Value;
+use alloc::borrow::Cow;
 use alloc::vec::IntoIter;
 use alloc::vec::Vec;
 use core::iter::Peekable;
@@ -115,8 +116,8 @@ impl<'de> de::MapAccess<'de> for Map<'de> {
     }
 }
 
-impl<'de> From<(Vec<(&'static str, Value<'de>)>, bool, bool)> for Map<'de> {
-    fn from(fields: (Vec<(&'static str, Value<'de>)>, bool, bool)) -> Self {
+impl<'de> From<(Vec<(Cow<'static, str>, Value<'de>)>, bool, bool)> for Map<'de> {
+    fn from(fields: (Vec<(Cow<'static, str>, Value<'de>)>, bool, bool)) -> Self {
         let mut vec = Vec::with_capacity(fields.0.len());
         for (index, (key, value)) in fields.0.into_iter().enumerate() {
             let key = Key::Identifier(Identifier::new(key, index as u64));

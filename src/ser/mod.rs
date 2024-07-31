@@ -10,6 +10,8 @@ mod tuple;
 
 use crate::Data;
 use crate::Error;
+use crate::Expected;
+use crate::Found;
 use crate::Number;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
@@ -143,7 +145,7 @@ impl ser::Serializer for Serializer {
 
     fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Error> {
         Ok(Value::Struct(Box::new(super::Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::Unit,
         })))
     }
@@ -155,9 +157,9 @@ impl ser::Serializer for Serializer {
         variant: &'static str,
     ) -> Result<Self::Ok, Error> {
         Ok(Value::Enum(Box::new(super::Enum {
-            name,
+            name: Cow::Borrowed(name),
             variant_index,
-            variant,
+            variant: Cow::Borrowed(variant),
             data: Data::Unit,
         })))
     }
@@ -167,7 +169,7 @@ impl ser::Serializer for Serializer {
         T: ?Sized + ser::Serialize,
     {
         Ok(Value::Struct(Box::new(super::Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::NewType {
                 value: value.serialize(self)?,
             },
@@ -185,9 +187,9 @@ impl ser::Serializer for Serializer {
         T: ?Sized + ser::Serialize,
     {
         Ok(Value::Enum(Box::new(super::Enum {
-            name,
+            name: Cow::Borrowed(name),
             variant_index,
-            variant,
+            variant: Cow::Borrowed(variant),
             data: Data::NewType {
                 value: value.serialize(self)?,
             },
@@ -223,7 +225,7 @@ impl ser::Serializer for Serializer {
         len: usize,
     ) -> Result<Self::SerializeTupleStruct, Error> {
         let st = super::Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::Tuple {
                 values: Vec::with_capacity(len),
             },
@@ -239,9 +241,9 @@ impl ser::Serializer for Serializer {
         len: usize,
     ) -> Result<Self::SerializeTupleVariant, Error> {
         let en = super::Enum {
-            name,
+            name: Cow::Borrowed(name),
             variant_index,
-            variant,
+            variant: Cow::Borrowed(variant),
             data: Data::Tuple {
                 values: Vec::with_capacity(len),
             },
@@ -262,7 +264,7 @@ impl ser::Serializer for Serializer {
         len: usize,
     ) -> Result<Self::SerializeStruct, Error> {
         let st = super::Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::Struct {
                 fields: Vec::with_capacity(len),
             },
@@ -278,9 +280,9 @@ impl ser::Serializer for Serializer {
         len: usize,
     ) -> Result<Self::SerializeStructVariant, Error> {
         let en = super::Enum {
-            name,
+            name: Cow::Borrowed(name),
             variant_index,
-            variant,
+            variant: Cow::Borrowed(variant),
             data: Data::Struct {
                 fields: Vec::with_capacity(len),
             },
@@ -339,6 +341,22 @@ impl ser::Serialize for Value {
                 }
                 tup.end()
             }
+        }
+    }
+}
+
+#[allow(clippy::ptr_arg)]
+fn to_static_str<E>(cow: &Cow<'static, str>) -> Result<&'static str, E>
+where
+    E: ser::Error,
+{
+    match cow {
+        Cow::Borrowed(v) => Ok(*v),
+        Cow::Owned(v) => {
+            let found = Found::String(v.clone());
+            let expected = Expected::StaticStr;
+            let error = Error::unexpected(found, expected);
+            Err(ser::Error::custom(error))
         }
     }
 }

@@ -140,31 +140,49 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 None => visitor.visit_none(),
             },
             Value::Struct(v) => match v.data {
-                Data::Unit => visitor.visit_unit_struct(v.name),
+                Data::Unit => match &v.name {
+                    Cow::Borrowed(name) => visitor.visit_unit_struct(name),
+                    Cow::Owned(_) => visitor.visit_unit(),
+                },
                 Data::NewType { value } => {
                     self.value = value;
-                    visitor.visit_newtype_struct_with_name(v.name, self)
+                    match &v.name {
+                        Cow::Borrowed(name) => visitor.visit_newtype_struct_with_name(name, self),
+                        Cow::Owned(_) => visitor.visit_newtype_struct(self),
+                    }
                 }
-                Data::Tuple { values } => visitor.visit_tuple_struct(
-                    v.name,
-                    Seq::new(values, self.human_readable, self.coerce_numbers),
-                ),
+                Data::Tuple { values } => {
+                    let tuple = Seq::new(values, self.human_readable, self.coerce_numbers);
+                    match &v.name {
+                        Cow::Borrowed(name) => visitor.visit_tuple_struct(name, tuple),
+                        Cow::Owned(_) => visitor.visit_seq(tuple),
+                    }
+                }
                 Data::Struct { fields } => {
                     let len = fields.len();
                     let mut field_names = Vec::with_capacity(len);
                     let mut vec = Vec::with_capacity(len);
                     for (index, (key, value)) in fields.into_iter().enumerate() {
-                        field_names.push(key);
+                        if let Cow::Borrowed(key) = &key {
+                            field_names.push(*key);
+                        }
                         let key = Key::Identifier(Identifier::new(key, index as u64));
                         vec.push((key, value));
                     }
                     let data = Map::new(vec, self.human_readable, self.coerce_numbers);
-                    visitor.visit_struct(v.name, &field_names, data)
+                    match v.name {
+                        Cow::Borrowed(name) => visitor.visit_struct(name, &field_names, data),
+                        Cow::Owned(_) => visitor.visit_map(data),
+                    }
                 }
             },
-            Value::Enum(v) => {
-                r#enum::visit_enum(v.name, v, self.human_readable, self.coerce_numbers, visitor)
-            }
+            Value::Enum(v) => r#enum::visit_enum(
+                v.name.clone(),
+                v,
+                self.human_readable,
+                self.coerce_numbers,
+                visitor,
+            ),
             Value::Tuple(v) => {
                 visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
@@ -413,7 +431,10 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
             Value::Struct(v) => match v.data {
                 Data::NewType { value } => {
                     self.value = value;
-                    visitor.visit_newtype_struct_with_name(v.name, self)
+                    match v.name {
+                        Cow::Borrowed(name) => visitor.visit_newtype_struct_with_name(name, self),
+                        Cow::Owned(_) => visitor.visit_newtype_struct(self),
+                    }
                 }
                 _ => {
                     self.value = Value::Struct(v);
@@ -529,9 +550,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         V: Visitor<'de>,
     {
         match self.value {
-            Value::Enum(v) => {
-                r#enum::visit_enum(name, v, self.human_readable, self.coerce_numbers, visitor)
-            }
+            Value::Enum(v) => r#enum::visit_enum(
+                Cow::Borrowed(name),
+                v,
+                self.human_readable,
+                self.coerce_numbers,
+                visitor,
+            ),
             Value::String(string) => visitor.visit_enum(r#enum::Access {
                 expected: name,
                 name: Value::String(string),
@@ -565,7 +590,10 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
-            Value::Enum(v) => visitor.visit_borrowed_str(v.variant),
+            Value::Enum(v) => match v.variant {
+                Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
+                Cow::Owned(v) => visitor.visit_string(v),
+            },
             _ => Err(self.value.unexpected(Expected::Identifier)),
         }
     }

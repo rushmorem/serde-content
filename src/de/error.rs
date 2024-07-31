@@ -1,5 +1,4 @@
 use crate::{Data, Enum, Error, Expected, Found, FoundData, Number, Struct, Value};
-use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
@@ -41,12 +40,12 @@ impl Value<'_> {
             }
             Value::Option(v) => Found::Option(v.map(|x| Box::new(x.into_found()))),
             Value::Struct(v) => Found::Struct {
-                name: v.name.to_owned(),
+                name: v.name.into_owned(),
                 data: Box::new(v.data.into_found()),
             },
             Value::Enum(v) => Found::Enum {
-                name: v.name.to_owned(),
-                variant: v.variant.to_owned(),
+                name: v.name.into_owned(),
+                variant: v.variant.into_owned(),
                 data: Box::new(v.data.into_found()),
             },
             Value::Tuple(v) => {
@@ -71,7 +70,7 @@ impl Data<'_> {
             Data::Struct { fields } => FoundData::Struct(
                 fields
                     .into_iter()
-                    .map(|(k, v)| (k.to_owned(), v.into_found()))
+                    .map(|(k, v)| (k.into_owned(), v.into_found()))
                     .collect(),
             ),
         }
@@ -88,7 +87,7 @@ impl Unexpected for Value<'_> {
 impl Unexpected for Box<Struct<'_>> {
     fn unexpected(self, expected: Expected) -> Error {
         let found = Found::Struct {
-            name: self.name.to_owned(),
+            name: self.name.into_owned(),
             data: Box::new(self.data.into_found()),
         };
         Error::unexpected(found, expected)
@@ -98,8 +97,8 @@ impl Unexpected for Box<Struct<'_>> {
 impl Unexpected for Box<Enum<'_>> {
     fn unexpected(self, expected: Expected) -> Error {
         let found = Found::Enum {
-            name: self.name.to_owned(),
-            variant: self.variant.to_owned(),
+            name: self.name.into_owned(),
+            variant: self.variant.into_owned(),
             data: Box::new(self.data.into_found()),
         };
         Error::unexpected(found, expected)

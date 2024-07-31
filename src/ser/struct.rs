@@ -2,10 +2,14 @@ use crate::ser::Value;
 use crate::Data;
 use crate::Error;
 use crate::Serializer;
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use serde::ser;
+use serde::ser::SerializeMap;
 use serde::ser::SerializeStruct;
 use serde::ser::SerializeTupleStruct;
+
+use super::to_static_str;
 
 pub struct Struct {
     r#struct: crate::Struct<'static>,
@@ -27,22 +31,41 @@ impl ser::Serialize for crate::Struct<'static> {
         S: ser::Serializer,
     {
         match &self.data {
-            Data::Unit => serializer.serialize_unit_struct(self.name),
-            Data::NewType { value } => serializer.serialize_newtype_struct(self.name, value),
-            Data::Tuple { values } => {
-                let mut tup = serializer.serialize_tuple_struct(self.name, values.len())?;
-                for value in values {
-                    tup.serialize_field(value)?;
+            Data::Unit => match &self.name {
+                Cow::Borrowed(name) => serializer.serialize_unit_struct(name),
+                Cow::Owned(_) => serializer.serialize_unit(),
+            },
+            Data::NewType { value } => match &self.name {
+                Cow::Borrowed(name) => serializer.serialize_newtype_struct(name, value),
+                Cow::Owned(_) => value.serialize(serializer),
+            },
+            Data::Tuple { values } => match &self.name {
+                Cow::Borrowed(name) => {
+                    let mut tup = serializer.serialize_tuple_struct(name, values.len())?;
+                    for value in values {
+                        tup.serialize_field(value)?;
+                    }
+                    tup.end()
                 }
-                tup.end()
-            }
-            Data::Struct { fields } => {
-                let mut map = serializer.serialize_struct(self.name, fields.len())?;
-                for (key, value) in fields {
-                    map.serialize_field(key, value)?;
+                Cow::Owned(_) => values.serialize(serializer),
+            },
+            Data::Struct { fields } => match &self.name {
+                Cow::Borrowed(name) => {
+                    let mut map = serializer.serialize_struct(name, fields.len())?;
+                    for (key, value) in fields {
+                        let key = to_static_str(key)?;
+                        map.serialize_field(key, value)?;
+                    }
+                    map.end()
                 }
-                map.end()
-            }
+                Cow::Owned(_) => {
+                    let mut map = serializer.serialize_map(Some(fields.len()))?;
+                    for (key, value) in fields {
+                        map.serialize_entry(key, value)?;
+                    }
+                    map.end()
+                }
+            },
         }
     }
 }
@@ -59,7 +82,7 @@ impl ser::SerializeStruct for Struct {
             let value = value.serialize(Serializer {
                 human_readable: self.human_readable,
             })?;
-            fields.push((key, value));
+            fields.push((Cow::Borrowed(key), value));
         }
         Ok(())
     }

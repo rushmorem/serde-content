@@ -340,7 +340,7 @@ fn deserialize_unit_struct() {
     assert_eq!(
         Foo,
         Deserializer::new(Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Unit
         })))
         .deserialize()
@@ -358,9 +358,9 @@ fn deserialize_unit_variant() {
     assert_eq!(
         Foo::Bar,
         Deserializer::new(Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::Unit
         })))
         .deserialize()
@@ -381,7 +381,7 @@ fn deserialize_newtype_struct() {
     assert_eq!(
         Foo(true),
         Deserializer::new(Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::NewType {
                 value: Value::Bool(true)
             }
@@ -404,9 +404,9 @@ fn deserialize_newtype_variant() {
     assert_eq!(
         Foo::Bar(true),
         Deserializer::new(Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::NewType {
                 value: Value::Bool(true)
             }
@@ -478,7 +478,7 @@ fn deserialize_tuple_struct() {
     assert_eq!(
         Foo(true, 'a'),
         Deserializer::new(Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Tuple {
                 values: vec![Value::Bool(true), Value::Char('a')],
             }
@@ -503,9 +503,9 @@ fn deserialize_tuple_variant() {
     assert_eq!(
         Foo::Bar(true, 'a'),
         Deserializer::new(Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::Tuple {
                 values: vec![Value::Bool(true), Value::Char('a')],
             }
@@ -559,9 +559,12 @@ fn deserialize_struct() {
             baz: 'a'
         },
         Deserializer::new(Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Struct {
-                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
+                fields: vec![
+                    (Cow::Borrowed("bar"), Value::Bool(true)),
+                    (Cow::Borrowed("baz"), Value::Char('a'))
+                ],
             }
         })))
         .deserialize()
@@ -593,11 +596,14 @@ fn deserialize_struct_variant() {
             baz: 'a',
         },
         Deserializer::new(Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::Struct {
-                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
+                fields: vec![
+                    (Cow::Borrowed("bar"), Value::Bool(true)),
+                    (Cow::Borrowed("baz"), Value::Char('a'))
+                ],
             }
         })))
         .deserialize()
