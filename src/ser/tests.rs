@@ -242,7 +242,7 @@ fn serialize_unit_struct() {
     assert_eq!(
         SERIALIZER.serialize(Foo).unwrap(),
         Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Unit
         }))
     );
@@ -257,9 +257,9 @@ fn serialize_unit_variant() {
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar).unwrap(),
         Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::Unit
         }))
     );
@@ -272,7 +272,7 @@ fn serialize_newtype_struct() {
     assert_eq!(
         SERIALIZER.serialize(Foo(true)).unwrap(),
         Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::NewType {
                 value: Value::Bool(true)
             }
@@ -289,9 +289,9 @@ fn serialize_newtype_variant() {
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar(true)).unwrap(),
         Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::NewType {
                 value: Value::Bool(true)
             }
@@ -334,7 +334,7 @@ fn serialize_tuple_struct() {
     assert_eq!(
         SERIALIZER.serialize(Foo(true, 'a')).unwrap(),
         Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Tuple {
                 values: vec![Value::Bool(true), Value::Char('a')],
             }
@@ -351,9 +351,9 @@ fn serialize_tuple_variant() {
     assert_eq!(
         SERIALIZER.serialize(Foo::Bar(true, 'a')).unwrap(),
         Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 0,
-            variant: "Bar",
+            variant: Cow::Borrowed("Bar"),
             data: Data::Tuple {
                 values: vec![Value::Bool(true), Value::Char('a')],
             }
@@ -394,9 +394,12 @@ fn serialize_struct() {
             })
             .unwrap(),
         Value::Struct(Box::new(Struct {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             data: Data::Struct {
-                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
+                fields: vec![
+                    (Cow::Borrowed("bar"), Value::Bool(true)),
+                    (Cow::Borrowed("baz"), Value::Char('a'))
+                ],
             }
         }))
     );
@@ -418,11 +421,14 @@ fn serialize_struct_variant() {
             })
             .unwrap(),
         Value::Enum(Box::new(Enum {
-            name: "Foo",
+            name: Cow::Borrowed("Foo"),
             variant_index: 1,
-            variant: "Baz",
+            variant: Cow::Borrowed("Baz"),
             data: Data::Struct {
-                fields: vec![("bar", Value::Bool(true)), ("baz", Value::Char('a'))],
+                fields: vec![
+                    (Cow::Borrowed("bar"), Value::Bool(true)),
+                    (Cow::Borrowed("baz"), Value::Char('a'))
+                ],
             }
         }))
     );

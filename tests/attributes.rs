@@ -1,6 +1,9 @@
 #![cfg(feature = "derive")]
 #![allow(clippy::disallowed_names)]
 
+extern crate alloc;
+
+use alloc::borrow::Cow;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_content::Data;
@@ -42,9 +45,9 @@ fn skip() {
 
     let value = Serializer::new().serialize(&foo).unwrap();
     let expected = Value::Struct(Box::new(Struct {
-        name: "Foo",
+        name: Cow::Borrowed("Foo"),
         data: Data::Struct {
-            fields: vec![("bar", Value::Bool(true))],
+            fields: vec![(Cow::Borrowed("bar"), Value::Bool(true))],
         },
     }));
     assert_eq!(value, expected);

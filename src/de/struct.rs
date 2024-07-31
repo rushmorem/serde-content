@@ -38,7 +38,7 @@ impl<'de> de::Visitor<'de> for Visitor {
         E: de::Error,
     {
         Ok(Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::Unit,
         })
     }
@@ -52,7 +52,7 @@ impl<'de> de::Visitor<'de> for Visitor {
         D: de::Deserializer<'de>,
     {
         Ok(Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::NewType {
                 value: Deserialize::deserialize(deserializer)?,
             },
@@ -73,7 +73,7 @@ impl<'de> de::Visitor<'de> for Visitor {
             values.push(e);
         }
         Ok(Struct {
-            name,
+            name: Cow::Borrowed(name),
             data: Data::Tuple { values },
         })
     }
@@ -94,17 +94,13 @@ impl<'de> de::Visitor<'de> for Visitor {
             .unwrap_or(len)
             .min(len);
         let mut vec = Vec::with_capacity(len);
-        while let Some(k) = visitor.next_key::<Cow<str>>()? {
-            let value = visitor.next_value()?;
-            for field in fields {
-                let key = *field;
-                if key == k {
-                    vec.push((key, value));
-                    break;
-                }
-            }
+        while let Some((key, value)) = visitor.next_entry()? {
+            vec.push((key, value));
         }
         let data = Data::Struct { fields: vec };
-        Ok(Struct { name, data })
+        Ok(Struct {
+            name: Cow::Borrowed(name),
+            data,
+        })
     }
 }

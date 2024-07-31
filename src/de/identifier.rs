@@ -3,13 +3,14 @@ use crate::DataType;
 use crate::Error;
 use crate::Expected;
 use crate::Found;
+use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
 use serde::de::Deserializer;
 use serde::de::Visitor;
 
 pub(super) struct Identifier {
-    name: &'static str,
+    name: Cow<'static, str>,
     index: u64,
 }
 
@@ -21,7 +22,7 @@ impl Unexpected for Identifier {
 }
 
 impl Identifier {
-    pub(super) const fn new(name: &'static str, index: u64) -> Self {
+    pub(super) const fn new(name: Cow<'static, str>, index: u64) -> Self {
         Self { name, index }
     }
 }
@@ -33,7 +34,7 @@ impl<'de> Deserializer<'de> for Identifier {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_borrowed_str(self.name)
+        self.deserialize_str(visitor)
     }
 
     fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -47,7 +48,10 @@ impl<'de> Deserializer<'de> for Identifier {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_borrowed_str(self.name)
+        match self.name {
+            Cow::Borrowed(name) => visitor.visit_borrowed_str(name),
+            Cow::Owned(name) => visitor.visit_string(name),
+        }
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -61,7 +65,10 @@ impl<'de> Deserializer<'de> for Identifier {
     where
         V: Visitor<'de>,
     {
-        visitor.visit_borrowed_bytes(self.name.as_bytes())
+        match self.name {
+            Cow::Borrowed(name) => visitor.visit_borrowed_bytes(name.as_bytes()),
+            Cow::Owned(name) => visitor.visit_bytes(name.as_bytes()),
+        }
     }
 
     fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>

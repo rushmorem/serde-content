@@ -104,6 +104,8 @@ pub enum Expected {
     Char,
     /// Expected a Rust string.
     String,
+    /// Expected a static string slice.
+    StaticStr,
     /// Expected a Rust byte array.
     Bytes,
     /// Expected an array of Rust values.
@@ -174,6 +176,7 @@ impl fmt::Display for Expected {
             Expected::U128 => write!(f, "a 128-bit unsigned integer"),
             Expected::Char => write!(f, "a single character"),
             Expected::String => write!(f, "a string"),
+            Expected::StaticStr => write!(f, "a static string slice"),
             Expected::Bytes => write!(f, "a byte array"),
             Expected::Seq => write!(f, "a sequence"),
             Expected::Map => write!(f, "a map"),

@@ -46,7 +46,7 @@ pub enum Data<'a> {
     /// Represents object-like structs and enum variants.
     Struct {
         /// A vector of field names and their values.
-        fields: Vec<(&'static str, Value<'a>)>,
+        fields: Vec<(Cow<'static, str>, Value<'a>)>,
     },
 }
 
@@ -99,7 +99,7 @@ pub enum DataType {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Struct<'a> {
     /// The name of the struct.
-    pub name: &'static str,
+    pub name: Cow<'static, str>,
     /// The data of the struct.
     pub data: Data<'a>,
 }
@@ -118,11 +118,11 @@ impl Struct<'_> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Enum<'a> {
     /// The name of the enum.
-    pub name: &'static str,
+    pub name: Cow<'static, str>,
     /// The index of the enum variant.
     pub variant_index: u32,
     /// The name of the enum variant.
-    pub variant: &'static str,
+    pub variant: Cow<'static, str>,
     /// The data of the enum.
     pub data: Data<'a>,
 }
@@ -217,6 +217,12 @@ where
 impl From<char> for Value<'static> {
     fn from(value: char) -> Self {
         Self::Char(value)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Value<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
+        Self::String(value)
     }
 }
 
