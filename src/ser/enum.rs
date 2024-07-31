@@ -11,13 +11,13 @@ use serde::ser::SerializeMap;
 use serde::ser::SerializeStructVariant;
 use serde::ser::SerializeTupleVariant;
 
-pub struct Enum {
-    r#enum: crate::Enum<'static>,
+pub struct Enum<'a> {
+    r#enum: crate::Enum<'a>,
     human_readable: bool,
 }
 
-impl Enum {
-    pub(super) const fn new(r#enum: crate::Enum<'static>, human_readable: bool) -> Self {
+impl<'a> Enum<'a> {
+    pub(super) const fn new(r#enum: crate::Enum<'a>, human_readable: bool) -> Self {
         Self {
             r#enum,
             human_readable,
@@ -25,7 +25,7 @@ impl Enum {
     }
 }
 
-impl ser::Serialize for crate::Enum<'static> {
+impl<'a> ser::Serialize for crate::Enum<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -94,8 +94,8 @@ impl ser::Serialize for crate::Enum<'static> {
     }
 }
 
-impl ser::SerializeStructVariant for Enum {
-    type Ok = Value;
+impl<'a> ser::SerializeStructVariant for Enum<'a> {
+    type Ok = Value<'a>;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
@@ -103,9 +103,7 @@ impl ser::SerializeStructVariant for Enum {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Struct { fields } = &mut self.r#enum.data {
-            let value = value.serialize(Serializer {
-                human_readable: self.human_readable,
-            })?;
+            let value = value.serialize(Serializer::with_human_readable(self.human_readable))?;
             fields.push((Cow::Borrowed(key), value));
         }
         Ok(())
@@ -116,8 +114,8 @@ impl ser::SerializeStructVariant for Enum {
     }
 }
 
-impl ser::SerializeTupleVariant for Enum {
-    type Ok = Value;
+impl<'a> ser::SerializeTupleVariant for Enum<'a> {
+    type Ok = Value<'a>;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
@@ -125,9 +123,7 @@ impl ser::SerializeTupleVariant for Enum {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Tuple { values } = &mut self.r#enum.data {
-            let value = value.serialize(Serializer {
-                human_readable: self.human_readable,
-            })?;
+            let value = value.serialize(Serializer::with_human_readable(self.human_readable))?;
             values.push(value);
         }
         Ok(())
