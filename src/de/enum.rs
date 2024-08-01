@@ -14,6 +14,7 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
+use core::marker::PhantomData;
 use serde::de;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
@@ -27,8 +28,6 @@ impl<'de> serde::de::IntoDeserializer<'de, Error> for Enum<'de> {
 
     fn into_deserializer(self) -> Self::Deserializer {
         use crate::Deserializer;
-        use crate::Value;
-        use alloc::boxed::Box;
 
         Deserializer::new(Value::Enum(Box::new(self)))
     }
@@ -226,7 +225,7 @@ where
     }
 }
 
-impl<'de> Deserialize<'de> for Enum<'de> {
+impl<'de: 'a, 'a> Deserialize<'de> for Enum<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -236,6 +235,12 @@ impl<'de> Deserialize<'de> for Enum<'de> {
 }
 
 pub(super) struct Visitor;
+
+impl Visitor {
+    pub(super) const fn new() -> Self {
+        Self
+    }
+}
 
 impl<'de> de::Visitor<'de> for Visitor {
     type Value = Enum<'de>;
@@ -296,9 +301,11 @@ impl<'de> de::Visitor<'de> for Visitor {
     where
         A: de::EnumAccess<'de>,
     {
-        struct SeqVisitor;
+        struct SeqVisitor<'a> {
+            marker: PhantomData<Value<'a>>,
+        }
 
-        impl<'de> de::Visitor<'de> for SeqVisitor {
+        impl<'de> de::Visitor<'de> for SeqVisitor<'de> {
             type Value = Vec<Value<'de>>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -324,7 +331,12 @@ impl<'de> de::Visitor<'de> for Visitor {
             variant_index,
             variant: Cow::Borrowed(variant),
             data: Data::Tuple {
-                values: variant_access.tuple_variant(len, SeqVisitor)?,
+                values: variant_access.tuple_variant(
+                    len,
+                    SeqVisitor {
+                        marker: PhantomData,
+                    },
+                )?,
             },
         })
     }

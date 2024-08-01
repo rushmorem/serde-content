@@ -4,9 +4,15 @@ use crate::Error;
 use crate::Value;
 use core::mem::size_of;
 
+// Ensure the value works well with derive macros.
 #[cfg(feature = "derive")]
-#[derive(serde::Serialize)]
-struct _Bar<'a>(Value<'a>);
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Bar(Value<'static>);
+
+// Ensure the value works well with derive macros.
+#[cfg(feature = "derive")]
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Foo(Bar);
 
 #[test]
 fn value_size() {

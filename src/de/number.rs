@@ -6,7 +6,7 @@ use serde::de;
 use serde::Deserialize;
 
 #[cfg(feature = "std")]
-impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Number {
+impl<'de> serde::de::IntoDeserializer<'de, Error> for Number {
     type Deserializer = crate::Deserializer<'de>;
 
     fn into_deserializer(self) -> Self::Deserializer {
