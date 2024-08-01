@@ -610,12 +610,13 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     }
 }
 
-impl<'de> de::Deserialize<'de> for Value<'de> {
+impl<'de> de::Deserialize<'de> for Value<'static> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_any(ValueVisitor)
+        let value: Value = deserializer.deserialize_any(ValueVisitor)?;
+        Ok(value.into_owned())
     }
 }
 
@@ -779,7 +780,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         D: de::Deserializer<'de>,
     {
-        let data = r#struct::Visitor.visit_newtype_struct(deserializer)?;
+        let data = r#struct::Visitor::new().visit_newtype_struct(deserializer)?;
         Ok(Value::Struct(Box::new(data)))
     }
 
@@ -791,7 +792,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         D: de::Deserializer<'de>,
     {
-        let data = r#struct::Visitor.visit_newtype_struct_with_name(name, deserializer)?;
+        let data = r#struct::Visitor::new().visit_newtype_struct_with_name(name, deserializer)?;
         Ok(Value::Struct(Box::new(data)))
     }
 
@@ -837,7 +838,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         E: de::Error,
     {
-        let data = r#struct::Visitor.visit_unit_struct(name)?;
+        let data = r#struct::Visitor::new().visit_unit_struct(name)?;
         Ok(Value::Struct(Box::new(data)))
     }
 
@@ -857,7 +858,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: SeqAccess<'de>,
     {
-        let data = r#struct::Visitor.visit_tuple_struct(name, data)?;
+        let data = r#struct::Visitor::new().visit_tuple_struct(name, data)?;
         Ok(Value::Struct(Box::new(data)))
     }
 
@@ -870,7 +871,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: MapAccess<'de>,
     {
-        let data = r#struct::Visitor.visit_struct(name, fields, data)?;
+        let data = r#struct::Visitor::new().visit_struct(name, fields, data)?;
         Ok(Value::Struct(Box::new(data)))
     }
 
@@ -884,7 +885,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: de::EnumAccess<'de>,
     {
-        let data = r#enum::Visitor.visit_unit_variant(name, variant_index, variant, data)?;
+        let data = r#enum::Visitor::new().visit_unit_variant(name, variant_index, variant, data)?;
         Ok(Value::Enum(Box::new(data)))
     }
 
@@ -898,7 +899,8 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: de::EnumAccess<'de>,
     {
-        let data = r#enum::Visitor.visit_newtype_variant(name, variant_index, variant, data)?;
+        let data =
+            r#enum::Visitor::new().visit_newtype_variant(name, variant_index, variant, data)?;
         Ok(Value::Enum(Box::new(data)))
     }
 
@@ -913,7 +915,8 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: EnumAccess<'de>,
     {
-        let data = r#enum::Visitor.visit_tuple_variant(name, variant_index, variant, len, data)?;
+        let data =
+            r#enum::Visitor::new().visit_tuple_variant(name, variant_index, variant, len, data)?;
         Ok(Value::Enum(Box::new(data)))
     }
 
@@ -928,8 +931,13 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         A: EnumAccess<'de>,
     {
-        let data =
-            r#enum::Visitor.visit_struct_variant(name, variant_index, variant, fields, data)?;
+        let data = r#enum::Visitor::new().visit_struct_variant(
+            name,
+            variant_index,
+            variant,
+            fields,
+            data,
+        )?;
         Ok(Value::Enum(Box::new(data)))
     }
 }

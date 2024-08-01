@@ -13,12 +13,14 @@ use crate::Error;
 use crate::Expected;
 use crate::Found;
 use crate::Number;
+use crate::Value;
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::fmt;
+use core::marker::PhantomData;
 use map::Map;
 use r#enum::Enum;
 use r#struct::Struct;
@@ -29,15 +31,14 @@ use serde::ser::SerializeSeq;
 use serde::ser::SerializeTuple;
 use tuple::Tuple;
 
-type Value = super::Value<'static>;
-
 /// A structure for serialising Rust values into [crate::Value].
 #[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
-pub struct Serializer {
+pub struct Serializer<'a> {
     human_readable: bool,
+    lifetime: PhantomData<&'a ()>,
 }
 
-impl Serializer {
+impl<'a> Serializer<'a> {
     /// Creates a serializer.
     ///
     /// The serializer created doesn't serialize in human-readable form. To serialize
@@ -45,6 +46,7 @@ impl Serializer {
     pub const fn new() -> Self {
         Self {
             human_readable: false,
+            lifetime: PhantomData,
         }
     }
 
@@ -55,25 +57,32 @@ impl Serializer {
     }
 
     /// Convert a `T` into `Value` which is an enum that can represent any valid Rust data.
-    pub fn serialize<T>(self, value: T) -> Result<Value, Error>
+    pub fn serialize<T>(self, value: T) -> Result<Value<'a>, Error>
     where
         T: ser::Serialize,
     {
         value.serialize(self)
     }
+
+    const fn with_human_readable(human_readable: bool) -> Self {
+        Self {
+            human_readable,
+            lifetime: PhantomData,
+        }
+    }
 }
 
-impl ser::Serializer for Serializer {
-    type Ok = Value;
+impl<'a> ser::Serializer for Serializer<'a> {
+    type Ok = Value<'a>;
     type Error = Error;
 
-    type SerializeSeq = Seq;
-    type SerializeTuple = Tuple;
-    type SerializeTupleStruct = Struct;
-    type SerializeTupleVariant = Enum;
-    type SerializeMap = Map;
-    type SerializeStruct = Struct;
-    type SerializeStructVariant = Enum;
+    type SerializeSeq = Seq<'a>;
+    type SerializeTuple = Tuple<'a>;
+    type SerializeTupleStruct = Struct<'a>;
+    type SerializeTupleVariant = Enum<'a>;
+    type SerializeMap = Map<'a>;
+    type SerializeStruct = Struct<'a>;
+    type SerializeStructVariant = Enum<'a>;
 
     fn serialize_bool(self, value: bool) -> Result<Self::Ok, Error> {
         Ok(Value::Bool(value))
@@ -302,7 +311,7 @@ impl ser::Serializer for Serializer {
     }
 }
 
-impl ser::Serialize for Value {
+impl<'a> ser::Serialize for Value<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,

@@ -11,13 +11,13 @@ use serde::ser::SerializeTupleStruct;
 
 use super::to_static_str;
 
-pub struct Struct {
-    r#struct: crate::Struct<'static>,
+pub struct Struct<'a> {
+    r#struct: crate::Struct<'a>,
     human_readable: bool,
 }
 
-impl Struct {
-    pub(super) const fn new(r#struct: crate::Struct<'static>, human_readable: bool) -> Self {
+impl<'a> Struct<'a> {
+    pub(super) const fn new(r#struct: crate::Struct<'a>, human_readable: bool) -> Self {
         Self {
             r#struct,
             human_readable,
@@ -25,7 +25,7 @@ impl Struct {
     }
 }
 
-impl ser::Serialize for crate::Struct<'static> {
+impl<'a> ser::Serialize for crate::Struct<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -70,8 +70,8 @@ impl ser::Serialize for crate::Struct<'static> {
     }
 }
 
-impl ser::SerializeStruct for Struct {
-    type Ok = Value;
+impl<'a> ser::SerializeStruct for Struct<'a> {
+    type Ok = Value<'a>;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Error>
@@ -79,9 +79,7 @@ impl ser::SerializeStruct for Struct {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Struct { fields } = &mut self.r#struct.data {
-            let value = value.serialize(Serializer {
-                human_readable: self.human_readable,
-            })?;
+            let value = value.serialize(Serializer::with_human_readable(self.human_readable))?;
             fields.push((Cow::Borrowed(key), value));
         }
         Ok(())
@@ -92,8 +90,8 @@ impl ser::SerializeStruct for Struct {
     }
 }
 
-impl ser::SerializeTupleStruct for Struct {
-    type Ok = Value;
+impl<'a> ser::SerializeTupleStruct for Struct<'a> {
+    type Ok = Value<'a>;
     type Error = Error;
 
     fn serialize_field<T>(&mut self, value: &T) -> Result<(), Error>
@@ -101,9 +99,7 @@ impl ser::SerializeTupleStruct for Struct {
         T: ?Sized + ser::Serialize,
     {
         if let Data::Tuple { values } = &mut self.r#struct.data {
-            let value = value.serialize(Serializer {
-                human_readable: self.human_readable,
-            })?;
+            let value = value.serialize(Serializer::with_human_readable(self.human_readable))?;
             values.push(value);
         }
         Ok(())

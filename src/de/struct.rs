@@ -9,13 +9,12 @@ impl<'de> serde::de::IntoDeserializer<'de, crate::Error> for Struct<'de> {
     fn into_deserializer(self) -> Self::Deserializer {
         use crate::Deserializer;
         use crate::Value;
-        use alloc::boxed::Box;
 
         Deserializer::new(Value::Struct(Box::new(self)))
     }
 }
 
-impl<'de> Deserialize<'de> for Struct<'de> {
+impl<'de: 'a, 'a> Deserialize<'de> for Struct<'a> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -25,6 +24,12 @@ impl<'de> Deserialize<'de> for Struct<'de> {
 }
 
 pub(super) struct Visitor;
+
+impl Visitor {
+    pub(super) const fn new() -> Self {
+        Self
+    }
+}
 
 impl<'de> de::Visitor<'de> for Visitor {
     type Value = Struct<'de>;
