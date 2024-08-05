@@ -598,7 +598,19 @@ impl<'de> de::Deserialize<'de> for Value<'static> {
     }
 }
 
-struct ValueVisitor;
+/// A Serde visitor that deserializes any value into [crate::Value].
+///
+/// ## Example
+///
+/// ```
+/// # use serde::de::Deserializer as _;
+/// # use serde_content::{Value, ValueVisitor, Deserializer};
+/// # fn main() -> serde_content::Result<()> {
+/// # let deserializer = Deserializer::new(Value::Unit);
+/// let value = deserializer.deserialize_any(ValueVisitor)?;
+/// # Ok(()) }
+/// ```
+pub struct ValueVisitor;
 
 impl<'de> Visitor<'de> for ValueVisitor {
     type Value = Value<'de>;
