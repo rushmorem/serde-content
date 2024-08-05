@@ -5,7 +5,6 @@ mod identifier;
 mod map;
 mod number;
 mod seq;
-mod r#struct;
 mod tests;
 
 use crate::Data;
@@ -24,9 +23,9 @@ use identifier::Identifier;
 use map::Map;
 use seq::Seq;
 use serde::de;
+use serde::Deserialize;
 mod error;
 use map::Key;
-use serde::de::EnumAccess;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
@@ -140,40 +139,24 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 None => visitor.visit_none(),
             },
             Value::Struct(v) => match v.data {
-                Data::Unit => match &v.name {
-                    Cow::Borrowed(name) => visitor.visit_unit_struct(name),
-                    Cow::Owned(_) => visitor.visit_unit(),
-                },
+                Data::Unit => visitor.visit_unit(),
                 Data::NewType { value } => {
                     self.value = value;
-                    match &v.name {
-                        Cow::Borrowed(name) => visitor.visit_newtype_struct_with_name(name, self),
-                        Cow::Owned(_) => visitor.visit_newtype_struct(self),
-                    }
+                    visitor.visit_newtype_struct(self)
                 }
                 Data::Tuple { values } => {
                     let tuple = Seq::new(values, self.human_readable, self.coerce_numbers);
-                    match &v.name {
-                        Cow::Borrowed(name) => visitor.visit_tuple_struct(name, tuple),
-                        Cow::Owned(_) => visitor.visit_seq(tuple),
-                    }
+                    visitor.visit_seq(tuple)
                 }
                 Data::Struct { fields } => {
                     let len = fields.len();
-                    let mut field_names = Vec::with_capacity(len);
                     let mut vec = Vec::with_capacity(len);
                     for (index, (key, value)) in fields.into_iter().enumerate() {
-                        if let Cow::Borrowed(key) = &key {
-                            field_names.push(*key);
-                        }
                         let key = Key::Identifier(Identifier::new(key, index as u64));
                         vec.push((key, value));
                     }
                     let data = Map::new(vec, self.human_readable, self.coerce_numbers);
-                    match v.name {
-                        Cow::Borrowed(name) => visitor.visit_struct(name, &field_names, data),
-                        Cow::Owned(_) => visitor.visit_map(data),
-                    }
+                    visitor.visit_map(data)
                 }
             },
             Value::Enum(v) => r#enum::visit_enum(
@@ -184,7 +167,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 visitor,
             ),
             Value::Tuple(v) => {
-                visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
+                visitor.visit_seq(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
         }
     }
@@ -405,7 +388,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.value {
             Value::Struct(v) => match v.data {
-                Data::Unit => visitor.visit_unit_struct(name),
+                Data::Unit => visitor.visit_unit(),
                 _ => Err(v.unexpected(Expected::Struct {
                     name: Some(name.to_owned()),
                     typ: Some(DataType::Unit),
@@ -431,10 +414,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
             Value::Struct(v) => match v.data {
                 Data::NewType { value } => {
                     self.value = value;
-                    match v.name {
-                        Cow::Borrowed(name) => visitor.visit_newtype_struct_with_name(name, self),
-                        Cow::Owned(_) => visitor.visit_newtype_struct(self),
-                    }
+                    visitor.visit_newtype_struct(self)
                 }
                 _ => {
                     self.value = Value::Struct(v);
@@ -463,7 +443,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.value {
             Value::Tuple(v) => {
-                visitor.visit_tuple(Seq::new(v, self.human_readable, self.coerce_numbers))
+                visitor.visit_seq(Seq::new(v, self.human_readable, self.coerce_numbers))
             }
             Value::Seq(_) => self.deserialize_seq(visitor),
             _ => Err(self.value.unexpected(Expected::Tuple(len))),
@@ -481,10 +461,9 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.value {
             Value::Struct(v) => match v.data {
-                Data::Tuple { values } => visitor.visit_tuple_struct(
-                    name,
-                    Seq::new(values, self.human_readable, self.coerce_numbers),
-                ),
+                Data::Tuple { values } => {
+                    visitor.visit_seq(Seq::new(values, self.human_readable, self.coerce_numbers))
+                }
                 _ => Err(v.unexpected(Expected::Struct {
                     name: Some(name.to_owned()),
                     typ: Some(DataType::Tuple),
@@ -513,20 +492,19 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     fn deserialize_struct<V>(
         self,
         name: &'static str,
-        fields: &'static [&'static str],
+        _fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        let field_names = fields;
         match self.value {
             Value::Struct(v) => match v.data {
-                Data::Struct { fields } => visitor.visit_struct(
-                    name,
-                    field_names,
-                    Map::from((fields, self.human_readable, self.coerce_numbers)),
-                ),
+                Data::Struct { fields } => visitor.visit_map(Map::from((
+                    fields,
+                    self.human_readable,
+                    self.coerce_numbers,
+                ))),
                 _ => Err(v.unexpected(Expected::Struct {
                     name: Some(name.to_owned()),
                     typ: Some(DataType::Struct),
@@ -780,20 +758,7 @@ impl<'de> Visitor<'de> for ValueVisitor {
     where
         D: de::Deserializer<'de>,
     {
-        let data = r#struct::Visitor::new().visit_newtype_struct(deserializer)?;
-        Ok(Value::Struct(Box::new(data)))
-    }
-
-    fn visit_newtype_struct_with_name<D>(
-        self,
-        name: &'static str,
-        deserializer: D,
-    ) -> Result<Self::Value, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        let data = r#struct::Visitor::new().visit_newtype_struct_with_name(name, deserializer)?;
-        Ok(Value::Struct(Box::new(data)))
+        Deserialize::deserialize(deserializer)
     }
 
     fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
@@ -832,112 +797,5 @@ impl<'de> Visitor<'de> for ValueVisitor {
         E: de::Error,
     {
         Ok(Value::Number(Number::U128(v)))
-    }
-
-    fn visit_unit_struct<E>(self, name: &'static str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        let data = r#struct::Visitor::new().visit_unit_struct(name)?;
-        Ok(Value::Struct(Box::new(data)))
-    }
-
-    fn visit_tuple<A>(self, mut visitor: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let len = visitor.size_hint().unwrap_or_default();
-        let mut vec = Vec::with_capacity(len);
-        while let Some(e) = visitor.next_element()? {
-            vec.push(e);
-        }
-        Ok(Value::Tuple(vec))
-    }
-
-    fn visit_tuple_struct<A>(self, name: &'static str, data: A) -> Result<Self::Value, A::Error>
-    where
-        A: SeqAccess<'de>,
-    {
-        let data = r#struct::Visitor::new().visit_tuple_struct(name, data)?;
-        Ok(Value::Struct(Box::new(data)))
-    }
-
-    fn visit_struct<A>(
-        self,
-        name: &'static str,
-        fields: &[&'static str],
-        data: A,
-    ) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let data = r#struct::Visitor::new().visit_struct(name, fields, data)?;
-        Ok(Value::Struct(Box::new(data)))
-    }
-
-    fn visit_unit_variant<A>(
-        self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        data: A,
-    ) -> Result<Self::Value, A::Error>
-    where
-        A: de::EnumAccess<'de>,
-    {
-        let data = r#enum::Visitor::new().visit_unit_variant(name, variant_index, variant, data)?;
-        Ok(Value::Enum(Box::new(data)))
-    }
-
-    fn visit_newtype_variant<A>(
-        self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        data: A,
-    ) -> Result<Self::Value, A::Error>
-    where
-        A: de::EnumAccess<'de>,
-    {
-        let data =
-            r#enum::Visitor::new().visit_newtype_variant(name, variant_index, variant, data)?;
-        Ok(Value::Enum(Box::new(data)))
-    }
-
-    fn visit_tuple_variant<A>(
-        self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        len: usize,
-        data: A,
-    ) -> Result<Self::Value, A::Error>
-    where
-        A: EnumAccess<'de>,
-    {
-        let data =
-            r#enum::Visitor::new().visit_tuple_variant(name, variant_index, variant, len, data)?;
-        Ok(Value::Enum(Box::new(data)))
-    }
-
-    fn visit_struct_variant<A>(
-        self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        fields: &[&'static str],
-        data: A,
-    ) -> Result<Self::Value, A::Error>
-    where
-        A: EnumAccess<'de>,
-    {
-        let data = r#enum::Visitor::new().visit_struct_variant(
-            name,
-            variant_index,
-            variant,
-            fields,
-            data,
-        )?;
-        Ok(Value::Enum(Box::new(data)))
     }
 }
