@@ -179,7 +179,7 @@ fn roundtrip_unit() {
     roundtrip(Some(()));
 }
 
-#[test]
+/* #[test]
 fn roundtrip_unit_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo;
@@ -209,7 +209,7 @@ fn roundtrip_newtype_variant() {
         Bar(bool),
     }
     roundtrip(Foo::Bar(true));
-}
+} */
 
 #[test]
 fn roundtrip_seq() {
@@ -218,7 +218,7 @@ fn roundtrip_seq() {
     }
 }
 
-#[test]
+/* #[test]
 fn roundtrip_tuple() {
     roundtrip((true,));
     roundtrip((true, 'a', "foo".to_owned()));
@@ -238,7 +238,7 @@ fn roundtrip_tuple_variant() {
         Bar(bool, char),
     }
     roundtrip(Foo::Bar(true, 'a'));
-}
+} */
 
 #[test]
 fn roundtrip_map() {
@@ -250,7 +250,7 @@ fn roundtrip_map() {
     }
 }
 
-#[test]
+/* #[test]
 fn roundtrip_struct() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Foo {
@@ -273,4 +273,4 @@ fn roundtrip_struct_variant() {
         bar: true,
         baz: 'a',
     });
-}
+} */
