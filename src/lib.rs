@@ -26,7 +26,7 @@ pub use error::Found;
 pub use error::Result;
 pub use number::Number;
 #[cfg(feature = "serde")]
-pub use {de::Deserializer, de::Unexpected, ser::Serializer};
+pub use {de::Deserializer, de::Unexpected, de::ValueVisitor, ser::Serializer};
 
 /// Represents struct and enum data.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
