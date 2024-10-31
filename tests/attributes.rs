@@ -15,21 +15,50 @@ use serde_content::Value;
 #[test]
 fn flatten() {
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
-    struct Foo {
-        bar: bool,
+    enum Baz {
+        Alpha,
+        Beta(bool),
+        Charlie { age: u8 },
     }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
-    struct Baz {
-        #[serde(flatten)]
-        foo: Foo,
+    struct Bar {
+        foo: bool,
+        baz: Baz,
     }
 
-    let foo = Foo { bar: true };
-    let baz = Baz { foo };
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct Foo {
+        #[serde(flatten)]
+        bar: Bar,
+    }
 
-    let value = Serializer::new().serialize(&baz).unwrap();
-    assert_eq!(baz, Deserializer::new(value).deserialize().unwrap());
+    let foo = Foo {
+        bar: Bar {
+            foo: true,
+            baz: Baz::Alpha,
+        },
+    };
+    let value = Serializer::new().serialize(&foo).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
+    //
+    let foo = Foo {
+        bar: Bar {
+            foo: true,
+            baz: Baz::Beta(true),
+        },
+    };
+    let value = Serializer::new().serialize(&foo).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
+    //
+    let foo = Foo {
+        bar: Bar {
+            foo: true,
+            baz: Baz::Charlie { age: 5 },
+        },
+    };
+    let value = Serializer::new().serialize(&foo).unwrap();
+    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
 }
 
 #[test]
