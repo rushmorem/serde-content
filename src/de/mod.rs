@@ -1,5 +1,6 @@
 #![cfg(feature = "serde")]
 
+use std::ops::Deref;
 mod r#enum;
 mod identifier;
 mod map;
@@ -29,6 +30,8 @@ use map::Key;
 use serde::de::MapAccess;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
+use serde::ser::Error as SerdeError;
+
 
 pub use error::Unexpected;
 
@@ -521,7 +524,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     fn deserialize_enum<V>(
         self,
         name: &'static str,
-        _variants: &'static [&'static str],
+        variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -542,8 +545,8 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 human_readable: self.human_readable,
                 coerce_numbers: self.coerce_numbers,
             }),
-            Value::Map(mut map) if map.len() == 1 => {
-                let (variant, data) = map.pop().unwrap();
+            Value::Map(map) => {
+                let (variant, data) = find_variant(variants, map)?;
                 visitor.visit_enum(r#enum::Access {
                     expected: name,
                     name: variant,
@@ -587,6 +590,28 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         self.human_readable
     }
 }
+fn find_variant<'a>(
+    variants: &'a [&'a str],
+    candidates: Vec<(Value<'a>, Value<'a>)>,
+) -> Result<(Value<'a>, Value<'a>), Error> {
+    let mut hit: Option<(Value<'a>, Value<'a>)> = None;
+    for item in candidates.iter() {
+        let (Value::String(key_str), _) = item else {
+            return Err(SerdeError::custom("Cannot deserialize map key into string"));
+        };
+
+        if variants.contains(&key_str.deref()) {
+            if hit.is_some() {
+                return Err(SerdeError::custom(
+                    "ambiguous enum, multiple variants present",
+                ));
+            }
+            hit = Some((item.0.clone(), item.1.clone()));
+        }
+    }
+    hit.ok_or_else(|| SerdeError::custom("Could not find enum variant in Map"))
+}
+
 
 impl<'de> de::Deserialize<'de> for Value<'static> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
