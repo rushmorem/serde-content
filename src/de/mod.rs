@@ -32,7 +32,6 @@ use serde::de::SeqAccess;
 use serde::de::Visitor;
 use serde::ser::Error as SerdeError;
 
-
 pub use error::Unexpected;
 
 /// A structure that deserializes Rust values into [Value].
@@ -611,7 +610,6 @@ fn find_variant<'a>(
     }
     hit.ok_or_else(|| SerdeError::custom("Could not find enum variant in Map"))
 }
-
 
 impl<'de> de::Deserialize<'de> for Value<'static> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
