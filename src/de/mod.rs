@@ -1,6 +1,6 @@
 #![cfg(feature = "serde")]
 
-use std::ops::Deref;
+use core::ops::Deref;
 mod r#enum;
 mod identifier;
 mod map;
