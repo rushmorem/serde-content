@@ -25,7 +25,7 @@ impl<'a> Struct<'a> {
     }
 }
 
-impl<'a> ser::Serialize for crate::Struct<'a> {
+impl ser::Serialize for crate::Struct<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,

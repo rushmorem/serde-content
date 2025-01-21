@@ -311,7 +311,7 @@ impl<'a> ser::Serializer for Serializer<'a> {
     }
 }
 
-impl<'a> ser::Serialize for Value<'a> {
+impl ser::Serialize for Value<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,

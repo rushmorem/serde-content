@@ -25,7 +25,7 @@ impl<'a> Enum<'a> {
     }
 }
 
-impl<'a> ser::Serialize for crate::Enum<'a> {
+impl ser::Serialize for crate::Enum<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
