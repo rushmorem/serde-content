@@ -40,7 +40,7 @@ fn flatten() {
         },
     };
     let value = Serializer::new().serialize(&foo).unwrap();
-    assert_eq!(foo, Deserializer::new(value).deserialize().unwrap());
+    assert_eq!(foo, Deserializer::new(dbg!(value)).deserialize().unwrap());
     //
     let foo = Foo {
         bar: Bar {
