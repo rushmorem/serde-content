@@ -298,6 +298,59 @@ fn deserialize_bytes() {
     );
 }
 
+/// Test that Bytes can deserialize as String when containing valid UTF-8.
+#[test]
+fn deserialize_bytes_as_string() {
+    let result: String = Deserializer::new(Value::Bytes(Cow::Borrowed(b"hello")))
+        .deserialize()
+        .unwrap();
+    assert_eq!(result, "hello");
+}
+
+/// Test that String can deserialize as bytes via deserialize_bytes.
+#[test]
+fn deserialize_string_as_bytes() {
+    use serde::de::{Deserializer as _, Visitor};
+    use std::fmt;
+
+    struct BytesVisitor;
+    impl<'de> Visitor<'de> for BytesVisitor {
+        type Value = Vec<u8>;
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "bytes")
+        }
+        fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+            Ok(v.as_bytes().to_vec())
+        }
+        fn visit_string<E: serde::de::Error>(self, v: String) -> Result<Self::Value, E> {
+            Ok(v.into_bytes())
+        }
+        fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
+            Ok(v.to_vec())
+        }
+        fn visit_byte_buf<E: serde::de::Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
+            Ok(v)
+        }
+    }
+
+    let result: Vec<u8> = Deserializer::new(Value::String(Cow::Borrowed("hello")))
+        .deserialize_bytes(BytesVisitor)
+        .unwrap();
+    assert_eq!(result, b"hello");
+}
+
+/// Test that Seq of u8 values can deserialize as bytes (for Vec<u8>).
+#[test]
+fn deserialize_seq_as_bytes() {
+    let result: Vec<u8> = Deserializer::new(Value::Seq(vec![
+        Value::Number(Number::U8(104)), // 'h'
+        Value::Number(Number::U8(105)), // 'i'
+    ]))
+    .deserialize()
+    .unwrap();
+    assert_eq!(result, b"hi");
+}
+
 #[test]
 fn deserialize_option() {
     assert_eq!(

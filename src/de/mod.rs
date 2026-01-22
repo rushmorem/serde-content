@@ -321,6 +321,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
                 Cow::Owned(v) => visitor.visit_string(v),
             },
+            // serde's ContentDeserializer allows Bytes to deserialize as String
+            // (the visitor handles conversion from bytes to string)
+            Value::Bytes(v) => match v {
+                Cow::Borrowed(v) => visitor.visit_borrowed_bytes(v),
+                Cow::Owned(v) => visitor.visit_byte_buf(v),
+            },
             _ => Err(self.value.unexpected(Expected::String)),
         }
     }
@@ -341,6 +347,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 Cow::Borrowed(v) => visitor.visit_borrowed_bytes(v),
                 Cow::Owned(v) => visitor.visit_byte_buf(v),
             },
+            // serde's ContentDeserializer allows String to deserialize as bytes
+            Value::String(v) => match v {
+                Cow::Borrowed(v) => visitor.visit_borrowed_str(v),
+                Cow::Owned(v) => visitor.visit_string(v),
+            },
+            // serde's ContentDeserializer allows Seq to deserialize as bytes (for Vec<u8>)
+            Value::Seq(v) => {
+                visitor.visit_seq(Seq::new(v, self.human_readable, self.coerce_numbers))
+            }
             _ => Err(self.value.unexpected(Expected::Bytes)),
         }
     }
