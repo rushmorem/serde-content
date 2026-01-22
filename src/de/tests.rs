@@ -313,7 +313,7 @@ fn deserialize_option() {
             .unwrap()
     );
     assert_eq!(
-        Some(()),
+        None::<()>,
         Deserializer::new(Value::Unit).deserialize().unwrap()
     );
     assert_eq!(
@@ -624,4 +624,58 @@ fn deserialize_struct_variant() {
         .deserialize()
         .unwrap()
     );
+}
+
+/// Test that null values in map fields correctly deserialize as None.
+#[test]
+fn deserialize_map_with_null_values_as_option() {
+    // Simulates JSON: {"FOO": "abc", "BAR": null}
+    // When captured via deserialize_any, null becomes Value::Unit
+    let value = Value::Map(vec![
+        (
+            Value::String(Cow::Borrowed("FOO")),
+            Value::String(Cow::Borrowed("abc")),
+        ),
+        (Value::String(Cow::Borrowed("BAR")), Value::Unit),
+    ]);
+
+    let result: BTreeMap<String, Option<String>> = Deserializer::new(value).deserialize().unwrap();
+
+    assert_eq!(result.get("FOO"), Some(&Some("abc".to_string())));
+    assert_eq!(result.get("BAR"), Some(&None));
+}
+
+/// Test nested struct with optional map containing null values.
+#[test]
+fn deserialize_struct_with_optional_map_containing_nulls() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Config {
+        env: Option<BTreeMap<String, Option<String>>>,
+        target: Option<String>,
+    }
+
+    // Simulates JSON: {"env": {"FOO": "abc", "BAR": null}, "target": "~:task"}
+    let value = Value::Map(vec![
+        (
+            Value::String(Cow::Borrowed("env")),
+            Value::Map(vec![
+                (
+                    Value::String(Cow::Borrowed("FOO")),
+                    Value::String(Cow::Borrowed("abc")),
+                ),
+                (Value::String(Cow::Borrowed("BAR")), Value::Unit),
+            ]),
+        ),
+        (
+            Value::String(Cow::Borrowed("target")),
+            Value::String(Cow::Borrowed("~:task")),
+        ),
+    ]);
+
+    let result: Config = Deserializer::new(value).deserialize().unwrap();
+
+    let env = result.env.expect("env should be Some");
+    assert_eq!(env.get("FOO"), Some(&Some("abc".to_string())));
+    assert_eq!(env.get("BAR"), Some(&None));
+    assert_eq!(result.target, Some("~:task".to_string()));
 }
