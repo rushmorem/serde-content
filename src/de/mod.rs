@@ -308,6 +308,12 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.value {
             Value::Char(v) => visitor.visit_char(v),
+            // serde's ContentDeserializer allows String/Str to be parsed as char
+            // (the visitor's visit_string/visit_str extracts the char)
+            Value::String(v) => match v {
+                Cow::Borrowed(s) => visitor.visit_borrowed_str(s),
+                Cow::Owned(s) => visitor.visit_string(s),
+            },
             _ => Err(self.value.unexpected(Expected::Char)),
         }
     }
