@@ -364,6 +364,15 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
                 }
                 None => visitor.visit_none(),
             },
+            // Special case Unit here because Value is ambiguous based on the src format
+            // (Option::None and Unit are interchangeable in e.g. YAML and JSON).
+            //
+            // If we try to deserialize an Option and encounter a Unit, visit the Unit, because
+            // visit_some() could be unexpected by the visitor.
+            //
+            // Based on Serde's Value type behaviour
+            // See: https://github.com/serde-rs/serde/blob/d17902059e77e371d8a7f83ff403f9e760b70f45/serde/src/private/de.rs#L1289-L1299
+            Value::Unit => visitor.visit_unit(),
             _ => visitor.visit_some(self),
         }
     }

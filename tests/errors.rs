@@ -365,12 +365,6 @@ fn option_errors() {
         Expected::Unit,
         r#"expected a unit, found Some("foo")"#,
     );
-    check_error::<Option<&str>>(
-        (),
-        Found::Unit,
-        Expected::String,
-        "expected a string, found ()",
-    );
 }
 
 #[test]
