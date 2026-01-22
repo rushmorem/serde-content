@@ -349,6 +349,28 @@ fn deserialize_unit_struct() {
     assert_eq!(Foo, Deserializer::new(Value::Unit).deserialize().unwrap());
 }
 
+/// Test that empty Map can be deserialized as unit struct.
+///
+/// This is needed for internally tagged enums with unit struct variants.
+#[test]
+fn deserialize_empty_map_as_unit_struct() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct UnitStruct;
+
+    let result: UnitStruct = Deserializer::new(Value::Map(vec![])).deserialize().unwrap();
+    assert_eq!(result, UnitStruct);
+}
+
+/// Test that empty Seq can be deserialized as unit struct.
+#[test]
+fn deserialize_empty_seq_as_unit_struct() {
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct UnitStruct;
+
+    let result: UnitStruct = Deserializer::new(Value::Seq(vec![])).deserialize().unwrap();
+    assert_eq!(result, UnitStruct);
+}
+
 #[test]
 fn deserialize_unit_variant() {
     #[derive(Debug, Deserialize, PartialEq)]

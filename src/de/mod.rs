@@ -380,7 +380,7 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
 
     fn deserialize_unit_struct<V>(
         self,
-        name: &'static str,
+        _name: &'static str,
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -389,16 +389,35 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
         match self.value {
             Value::Struct(v) => match v.data {
                 Data::Unit => visitor.visit_unit(),
-                _ => Err(v.unexpected(Expected::Struct {
-                    name: Some(name.to_owned()),
-                    typ: Some(DataType::Unit),
-                })),
+                _ => {
+                    // Reconstruct self for deserialize_any fallback
+                    let new_self = Self {
+                        value: Value::Struct(v),
+                        human_readable: self.human_readable,
+                        coerce_numbers: self.coerce_numbers,
+                    };
+                    new_self.deserialize_any(visitor)
+                }
             },
-            Value::Unit => self.deserialize_unit(visitor),
-            _ => Err(self.value.unexpected(Expected::Struct {
-                name: Some(name.to_owned()),
-                typ: Some(DataType::Unit),
-            })),
+            // As a special case, allow deserializing untagged newtype
+            // variant containing unit struct.
+            //
+            //     #[derive(Deserialize)]
+            //     struct Info;
+            //
+            //     #[derive(Deserialize)]
+            //     #[serde(tag = "topic")]
+            //     enum Message {
+            //         Info(Info),
+            //     }
+            //
+            // We want {"topic":"Info"} to deserialize even though
+            // ordinarily unit structs do not deserialize from empty map/seq.
+            //
+            // See: https://github.com/serde-rs/serde/blob/d17902059e77e371d8a7f83ff403f9e760b70f45/serde/src/private/de.rs#L1323-L1348
+            Value::Map(ref v) if v.is_empty() => visitor.visit_unit(),
+            Value::Seq(ref v) if v.is_empty() => visitor.visit_unit(),
+            _ => self.deserialize_any(visitor),
         }
     }
 
