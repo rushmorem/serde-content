@@ -227,6 +227,15 @@ fn deserialize_char() {
     );
 }
 
+/// Test that a single-character String can be deserialized as char.
+#[test]
+fn deserialize_string_as_char() {
+    let result: char = Deserializer::new(Value::String(Cow::Borrowed("a")))
+        .deserialize()
+        .unwrap();
+    assert_eq!(result, 'a');
+}
+
 #[test]
 fn deserialize_string() {
     let foo = String::from("foo");
