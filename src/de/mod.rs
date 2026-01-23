@@ -374,6 +374,18 @@ impl<'de> de::Deserializer<'de> for Deserializer<'de> {
     {
         match self.value {
             Value::Unit => visitor.visit_unit(),
+            // Allow deserializing newtype variant containing unit.
+            //
+            //     #[derive(Deserialize)]
+            //     #[serde(tag = "result")]
+            //     enum Response<T> {
+            //         Success(T),
+            //     }
+            //
+            // We want {"result":"Success"} to deserialize into Response<()>.
+            //
+            // See: https://github.com/serde-rs/serde/blob/d17902059e77e371d8a7f83ff403f9e760b70f45/serde/src/private/de.rs#L1301-L1318
+            Value::Map(ref v) if v.is_empty() => visitor.visit_unit(),
             _ => Err(self.value.unexpected(Expected::Unit)),
         }
     }

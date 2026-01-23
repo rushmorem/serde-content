@@ -333,6 +333,16 @@ fn deserialize_unit() {
     );
 }
 
+/// Test that empty Map can be deserialized as unit.
+///
+/// This is needed for internally tagged enums where the variant
+/// payload is `()`.
+#[test]
+fn deserialize_empty_map_as_unit() {
+    let result: () = Deserializer::new(Value::Map(vec![])).deserialize().unwrap();
+    assert_eq!(result, ());
+}
+
 #[test]
 fn deserialize_unit_struct() {
     #[derive(Debug, Deserialize, PartialEq)]
